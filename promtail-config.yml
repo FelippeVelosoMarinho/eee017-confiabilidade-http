@@ -1,0 +1,27 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: nasa_http
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nasa_http
+          __path__: /var/log/app/*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<client>\S+) \S+ \S+ \[(?P<timestamp>\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2} [+\-]\d{4})\] "(?P<method>\S+)\s(?P<path>\S+)\s*(?P<proto>[^"]*)" (?P<status_code>\d{3}) (?P<size>\S+)'
+      - timestamp:
+          source: timestamp
+          format: 02/Jan/2006:15:04:05 -0700
+      - labels:
+          status_code:
+          method:

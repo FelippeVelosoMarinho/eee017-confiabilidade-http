@@ -1,0 +1,403 @@
+{
+  "resumo": {
+    "arquivo": "NASA_access_log_Aug95.gz",
+    "linhas": 1569898,
+    "parseadas": 1568252,
+    "rejeitadas": 1646,
+    "inicio": "1995-08-01 00:00:01",
+    "fim": "1995-08-31 23:59:53",
+    "codigos": {
+      "200": 1397524,
+      "302": 26437,
+      "304": 134138,
+      "403": 171,
+      "404": 9952,
+      "500": 3,
+      "501": 27
+    },
+    "p_404_global": 0.006345918895687683
+  },
+  "calibracao": [
+    {
+      "window_min": 30,
+      "quantile": 0.95,
+      "u0": 0.017692813725232216,
+      "days": 30,
+      "days_failed": 23,
+      "failure_rate": 0.7666666666666667,
+      "t_std_min": 309.9905480600633,
+      "t_median_min": 180.0
+    },
+    {
+      "window_min": 30,
+      "quantile": 0.9,
+      "u0": 0.013234086804225276,
+      "days": 30,
+      "days_failed": 29,
+      "failure_rate": 0.9666666666666667,
+      "t_std_min": 402.6384445176183,
+      "t_median_min": 120.0
+    },
+    {
+      "window_min": 15,
+      "quantile": 0.95,
+      "u0": 0.02070597837176086,
+      "days": 30,
+      "days_failed": 29,
+      "failure_rate": 0.9666666666666667,
+      "t_std_min": 342.08704067928886,
+      "t_median_min": 135.0
+    },
+    {
+      "window_min": 5,
+      "quantile": 0.95,
+      "u0": 0.02702702702702703,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 151.14387920859457,
+      "t_median_min": 85.0
+    },
+    {
+      "window_min": 5,
+      "quantile": 0.9,
+      "u0": 0.018867924528301886,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 138.67828476970237,
+      "t_median_min": 32.5
+    },
+    {
+      "window_min": 5,
+      "quantile": 0.8,
+      "u0": 0.011299435028248588,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 134.24697389513105,
+      "t_median_min": 15.0
+    },
+    {
+      "window_min": 5,
+      "quantile": 0.7,
+      "u0": 0.007142857142857143,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 121.63938050191182,
+      "t_median_min": 10.0
+    },
+    {
+      "window_min": 30,
+      "quantile": 0.8,
+      "u0": 0.009602194787379973,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 117.8516016013359,
+      "t_median_min": 105.0
+    },
+    {
+      "window_min": 15,
+      "quantile": 0.9,
+      "u0": 0.014917283501193219,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 100.5186549850325,
+      "t_median_min": 105.0
+    },
+    {
+      "window_min": 30,
+      "quantile": 0.7,
+      "u0": 0.00759734778248353,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 87.86922100485471,
+      "t_median_min": 60.0
+    },
+    {
+      "window_min": 15,
+      "quantile": 0.8,
+      "u0": 0.010362694300518135,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 83.21057625085888,
+      "t_median_min": 45.0
+    },
+    {
+      "window_min": 15,
+      "quantile": 0.7,
+      "u0": 0.007810468140442132,
+      "days": 30,
+      "days_failed": 30,
+      "failure_rate": 1.0,
+      "t_std_min": 82.01981467913714,
+      "t_median_min": 30.0
+    }
+  ],
+  "escolha": {
+    "janela_min": 30,
+    "u0": 0.017692813725232216,
+    "classe_erro": 404,
+    "regra": "falha se a proporção de 404 na janela supera u0"
+  },
+  "weibull": {
+    "beta": 0.6915278404322106,
+    "eta_min": 651.5341666559772,
+    "nll": 170.6611489809824,
+    "converged": true,
+    "n": 30,
+    "n_failures": 23,
+    "n_censored": 7
+  },
+  "kaplan_meier": [
+    {
+      "t_min": 0.0,
+      "R": 1.0
+    },
+    {
+      "t_min": 30.0,
+      "R": 0.9
+    },
+    {
+      "t_min": 90.0,
+      "R": 0.8666666666666667
+    },
+    {
+      "t_min": 120.0,
+      "R": 0.6666666666666666
+    },
+    {
+      "t_min": 150.0,
+      "R": 0.6333333333333333
+    },
+    {
+      "t_min": 180.0,
+      "R": 0.5
+    },
+    {
+      "t_min": 210.0,
+      "R": 0.4666666666666667
+    },
+    {
+      "t_min": 240.0,
+      "R": 0.43333333333333335
+    },
+    {
+      "t_min": 270.0,
+      "R": 0.3666666666666667
+    },
+    {
+      "t_min": 300.0,
+      "R": 0.33333333333333337
+    },
+    {
+      "t_min": 390.0,
+      "R": 0.30000000000000004
+    },
+    {
+      "t_min": 1110.0,
+      "R": 0.2666666666666667
+    },
+    {
+      "t_min": 1320.0,
+      "R": 0.2333333333333334
+    }
+  ],
+  "carga_resistencia": {
+    "R": 0.9454,
+    "u0": 0.017692813725232216,
+    "sigma": 0.002,
+    "mean_load": 0.007086530748724185,
+    "p50_load": 0.005172637530083974,
+    "p90_load": 0.013234086804225276,
+    "draws": 20000,
+    "analytic_if_S_fixed": 0.94950213371266
+  },
+  "amostra": [
+    {
+      "day": "1995-08-01",
+      "t_min": 120,
+      "censored": false,
+      "windows": 30
+    },
+    {
+      "day": "1995-08-03",
+      "t_min": 390,
+      "censored": false,
+      "windows": 39
+    },
+    {
+      "day": "1995-08-04",
+      "t_min": 1110,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-05",
+      "t_min": 120,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-06",
+      "t_min": 180,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-07",
+      "t_min": 120,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-08",
+      "t_min": 30,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-09",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-10",
+      "t_min": 180,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-11",
+      "t_min": 300,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-12",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-13",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-14",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-15",
+      "t_min": 210,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-16",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-17",
+      "t_min": 180,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-18",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-19",
+      "t_min": 270,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-20",
+      "t_min": 240,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-21",
+      "t_min": 270,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-22",
+      "t_min": 150,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-23",
+      "t_min": 1440,
+      "censored": true,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-24",
+      "t_min": 120,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-25",
+      "t_min": 30,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-26",
+      "t_min": 30,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-27",
+      "t_min": 120,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-28",
+      "t_min": 90,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-29",
+      "t_min": 120,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-30",
+      "t_min": 180,
+      "censored": false,
+      "windows": 48
+    },
+    {
+      "day": "1995-08-31",
+      "t_min": 1320,
+      "censored": false,
+      "windows": 48
+    }
+  ]
+}
