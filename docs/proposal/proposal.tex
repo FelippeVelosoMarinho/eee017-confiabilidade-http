@@ -1,0 +1,102 @@
+\documentclass[10pt, twocolumn, a4paper]{article}
+
+% Codificação e idioma
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+
+% Formatação ABNT (margens)
+\usepackage[
+  top=3cm,
+  bottom=2cm,
+  left=3cm,
+  right=2cm
+]{geometry}
+
+% Espaçamento entre linhas (ABNT: 1,5 para texto, mas twocolumn usa simples)
+\usepackage{setspace}
+\onehalfspacing
+
+% Fontes e tipografia
+\usepackage{times}
+\usepackage{microtype}
+
+% Outros pacotes
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{hyperref}
+
+% Referências ABNT (deve vir após hyperref)
+\usepackage[alf]{abntex2cite}
+
+% Configuração de hyperlinks
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+}
+
+% Título, autor e data
+\title{\textbf{Confiabilidade de sistemas de software distribuídos a partir de sinais OpenTelemetry}}
+\author{Josoe Santos}
+\date{2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este trabalho propõe o estudo da confiabilidade de sistemas de software distribuídos utilizando sinais coletados pelo padrão aberto OpenTelemetry. A iniciativa visa democratizar práticas de \textit{Software Reliability Engineering} (SRE) para médias e pequenas empresas brasileiras, reduzindo a dependência de fornecedores proprietários de monitoramento.
+\end{abstract}
+
+\section{Introdução}
+
+O tema de confiabilidade de software é relativamente recente, mas amplamente discutido. A ubiquidade de sistemas de software em diversas áreas da sociedade tornou-os complexos e mais críticos. Nas décadas mais recentes, com os avanços no campo da internet e sistemas de software dependentes dela, tornou-se prática comum separar diferentes partes complexas de aplicações em servidores conectados por redes \cite{fowler2002patterns}, isto é o que denominamos sistemas distribuídos. A partir dessa definição, cada servidor em um sistema distribuído é tratado como um componente que pode falhar ou se comportar fora do esperado, similarmente a componentes de outros tipos de artefatos de engenharia.
+
+A prática que estuda a confiabilidade de sistemas web é conhecida como \textit{Software Reliability Engineering} (SRE) \cite{google_sre} e é prática comum no Brasil desde a metade da última década. Contudo, esse campo ainda não é consistentemente aplicado em empresas brasileiras, porque o tema demanda alto investimento e planejamento estratégico de longo prazo, tornando-se inviável para médias e pequenas empresas. Os custos relacionados a tempo, pessoas e fornecedores são altos demais para uma adoção da prática que realmente impacte positivamente a confiabilidade de sistemas novos.
+
+Normalmente, um dos fornecedores mais caros da SRE é o fornecedor de monitoramento. Essas empresas têm como maior produto uma suíte de bibliotecas e ferramentas de nuvem especializadas em coletar e processar dados de monitoramento de sistemas distribuídos. Contudo, o número relativamente pequeno de fornecedores competitivos leva a preços altos e ao efeito de \textit{vendor lock-in}, que é a incapacitação de uma organização de substituir o fornecedor por ser complexo ou caro demais. Essa situação irrita o mercado de software há anos e, para tanto, foi criado o OpenTelemetry \cite{otel_site}, uma iniciativa de código aberto que tem como finalidade padronizar e simplificar a adoção de software de monitoramento.
+
+\section{Descrição do sistema}
+
+A proposta de trabalho é estruturada em três etapas incrementais:
+
+\begin{enumerate}
+  \item Iniciar com um servidor simples e demonstrar a \textit{stack} LGTM (Loki, Grafana, Tempo, Mimir) com base nos dados de um sistema;
+  \item Adicionar um segundo servidor e mostrar os princípios se repetindo;
+  \item Aplicar o padrão para $N$ servidores interconectados com ou sem redundância. Nessa fase, podem ser utilizados algoritmos de grafos e as fórmulas de probabilidade combinada (independente e dependente).
+\end{enumerate}
+
+\section{Revisão de Literatura}
+
+A revisão de literatura contemplará as seguintes fontes:
+
+\begin{itemize}
+  \item Livros de SRE do Google \cite{google_sre};
+  \item Artigos da IEEE sobre confiabilidade de sistemas distribuídos;
+  \item Artigos da Thoughtworks (martinfowler.com) \cite{fowler2002patterns}.
+\end{itemize}
+
+\section{Metodologia}
+
+A metodologia proposta compreende as seguintes etapas:
+
+\begin{enumerate}
+  \item Coleta de dados por 30 dias;
+  \item Padronização de sinais pelo OpenTelemetry;
+  \item Desenvolvimento de ferramentas de baixo custo para uso no Grafana.
+\end{enumerate}
+
+\section{Resultados Esperados}
+
+Espera-se como resultado deste trabalho:
+
+\begin{itemize}
+  \item Visão mais realista da saúde do sistema — os resultados devem estar em consonância com a opinião dos usuários;
+  \item Melhoria da visibilidade de problemas para usuários do Grafana.
+\end{itemize}
+
+\bibliography{references}
+
+\end{document}
