@@ -5,9 +5,17 @@
 \providecommand{\abntbstabout}[1]{}
 \abntbstabout{v-1.9.7 }
 
+\bibitem[Alvidrez 2016]{alvidrez2016risk}
+\abntrefinfo{Alvidrez}{ALVIDREZ}{2016}
+{ALVIDREZ, M. Embracing risk. In:  BEYER, B. et al. (Ed.). \emph{Site
+  Reliability Engineering: How Google Runs Production Systems}. O'Reilly Media,
+  2016. cap.~3.
+Dispon{\'\i}vel em: \url{https://sre.google/sre-book/embracing-risk/}. Acesso
+  em: 6 nov. 2026.}
+
 \bibitem[Beyer et al. 2016]{google_sre}
 \abntrefinfo{Beyer et al.}{BEYER et al.}{2016}
-{BEYER, B. et al. \emph{Site Reliability Engineering: How Google Runs
+{BEYER, B. et al. (Ed.). \emph{Site Reliability Engineering: How Google Runs
   Production Systems}. Sebastopol, CA: O'Reilly Media, 2016.}
 
 \bibitem[Fowler 2002]{fowler2002patterns}
@@ -15,10 +23,41 @@
 {FOWLER, M. \emph{Patterns of Enterprise Application Architecture}. Boston, MA:
   Addison-Wesley, 2002.}
 
-\bibitem[{OpenTelemetry Authors} 2019]{otel_site}
-\abntrefinfo{{OpenTelemetry Authors}}{{OpenTelemetry Authors}}{2019}
-{{OpenTelemetry Authors}. \emph{OpenTelemetry}. 2019.
-  \url{https://opentelemetry.io}.
-Acesso em: 2026.}
+\bibitem[Jones et al. 2016]{jones2016slo}
+\abntrefinfo{Jones et al.}{JONES et al.}{2016}
+{JONES, C. et al. Service level objectives. In:  BEYER, B. et al. (Ed.).
+  \emph{Site Reliability Engineering: How Google Runs Production Systems}.
+  O'Reilly Media, 2016. cap.~4.
+Dispon{\'\i}vel em:
+  \url{https://sre.google/sre-book/service-level-objectives/}. Acesso em: 6
+  nov. 2026.}
+
+\bibitem[{OpenTelemetry Authors} 2026]{otel_site}
+\abntrefinfo{{OpenTelemetry Authors}}{{OpenTelemetry Authors}}{2026}
+{{OpenTelemetry Authors}. \emph{OpenTelemetry}. 2026.
+Dispon{\'\i}vel em: \url{https://opentelemetry.io/docs/concepts/signals/}.
+  Acesso em: 6 nov. 2026.}
+
+\bibitem[Oppenheimer, Ganapathi e Patterson 2003]{oppenheimer2003}
+\abntrefinfo{Oppenheimer, Ganapathi e Patterson}{OPPENHEIMER; GANAPATHI;
+  PATTERSON}{2003}
+{OPPENHEIMER, D.; GANAPATHI, A.; PATTERSON, D.~A. Why do internet services
+  fail, and what can be done about it? In:  \emph{Proceedings of the 4th USENIX
+  Symposium on Internet Technologies and Systems (USITS)}. [S.l.: s.n.], 2003.
+  p. 1--16.}
+
+\bibitem[Schroeder e Gibson 2006]{schroeder2006}
+\abntrefinfo{Schroeder e Gibson}{SCHROEDER; GIBSON}{2006}
+{SCHROEDER, B.; GIBSON, G.~A. A large-scale study of failures in
+  high-performance computing systems. In:  \emph{Proceedings of the
+  International Conference on Dependable Systems and Networks (DSN)}.
+  Philadelphia, PA, USA: [s.n.], 2006. p. 249--258.}
+
+\bibitem[Tian, Rudraraju e Li 2004]{tian2004}
+\abntrefinfo{Tian, Rudraraju e Li}{TIAN; RUDRARAJU; LI}{2004}
+{TIAN, J.; RUDRARAJU, S.; LI, Z. Evaluating web software reliability based on
+  workload and failure data extracted from server logs.
+\emph{IEEE Transactions on Software Engineering}, v.~30, n.~11, p. 754--769,
+  2004.}
 
 \end{thebibliography}
