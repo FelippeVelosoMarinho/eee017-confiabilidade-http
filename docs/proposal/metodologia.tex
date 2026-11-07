@@ -7,9 +7,8 @@
 
 O objeto é um sistema web genérico, em que a requisição parte do
 front-end, atravessa uma ou mais APIs e chega ao banco de dados. A análise
-mede o serviço do ponto de vista do usuário e cada componente do fluxo, e
-uma árvore de falhas combina os índices dos componentes para prever o do
-serviço.
+mede o serviço do ponto de vista do usuário e cada componente do fluxo,
+para indicar em qual deles as falhas se concentram.
 
 \textbf{Coleta.} Os componentes são instrumentados com o OpenTelemetry,
 cujas convenções semânticas padronizam as medidas de HTTP e de banco de
@@ -17,12 +16,13 @@ dados em qualquer sistema \cite{otel_site}. A métrica
 \texttt{http.server.request.duration} registra código de resposta, rota e
 duração de cada requisição. Os \textit{spans} de cliente de banco registram
 as consultas feitas pela API. Quando o banco não é instrumentado, sua falha
-é inferida pelo sinal que ela produz na API. O Grafana exibe o mapa de chamadas
-entre serviços (\textit{service graph}), e um \textit{plugin} desenvolvido
-pelo grupo calcula os índices por janela. As contagens exportadas em CSV
-para uma planilha servem para conferir os valores do \textit{plugin}. A coleta usa tráfego real durante aproximadamente 15 dias,
-condicionada à autorização do responsável por cada fonte. Os dados
-chegam mascarados: só entram código de resposta, rota agregada e duração.
+é inferida pelo sinal que ela produz na API. Um \textit{plugin} do
+Grafana desenvolvido pelo grupo calcula os índices por janela, e as
+contagens exportadas em CSV para uma planilha servem para conferir os
+valores do \textit{plugin}. A coleta usa tráfego real durante
+aproximadamente 15 dias, condicionada à autorização do responsável por
+cada fonte. Os dados são sempre mascarados: coletam-se apenas código de
+resposta, rotas sem identificadores e as métricas de interesse.
 
 \textbf{Critério de falha.} A falha é medida do ponto de vista do usuário,
 como falha do serviço, e não só do componente \cite{oppenheimer2003}. Há
@@ -59,25 +59,6 @@ pelo número de episódios, e o MTTR é a duração média dos episódios
 \cite{oconnor2012}. Como $A = \mathrm{MTBF}/(\mathrm{MTBF}+\mathrm{MTTR})$, os dois
 mostram se o serviço perde disponibilidade por falhar com frequência ou
 por demorar a se recuperar.
-
-\textbf{Árvore de falhas.} O evento topo é o serviço fora do SLO em uma
-janela \cite{ruijters2015}. A estrutura da árvore vem do \textit{service
-graph}. As camadas que a requisição atravessa em sequência (por exemplo
-front-end, API e banco) entram em uma porta OU, porque a falha de
-qualquer uma derruba o serviço. As instâncias redundantes de uma mesma
-camada entram em uma porta E, porque a camada só falha se todas falharem
-juntas \cite{oconnor2012}. Com $p_i$ igual à fração de janelas em que a
-instância $i$ falhou, e supondo falhas independentes, a probabilidade
-prevista de falha do serviço é
-\begin{equation}
-P_{\mathrm{prev}} = 1-\prod_{c}\Bigl(1-\prod_{i\in c} p_i\Bigr),
-\end{equation}
-em que $c$ percorre as camadas e $i$ as instâncias de cada camada. $P_{\mathrm{prev}}$ é comparado com a fração observada de janelas em
-falha, $1-A$. Se os dois valores forem próximos, a hipótese de
-independência se sustenta. Se o observado for maior, há uma causa comum
-afetando vários componentes ao mesmo tempo, como uma implantação com
-defeito, que pode ser identificada pela versão do serviço registrada na
-telemetria.
 
 \textbf{Declaração de uso de IA.}
 % [AJUSTAR] Completem com todas as ferramentas que o grupo usou.

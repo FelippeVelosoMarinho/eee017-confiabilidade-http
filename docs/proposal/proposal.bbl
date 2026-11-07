@@ -23,6 +23,14 @@ Dispon{\'\i}vel em: \url{https://sre.google/sre-book/embracing-risk/}. Acesso
 {FOWLER, M. \emph{Patterns of Enterprise Application Architecture}. Boston, MA:
   Addison-Wesley, 2002.}
 
+\bibitem[Goseva-Popstojanova, Mazimdar e Singh 2004]{goseva2004}
+\abntrefinfo{Goseva-Popstojanova, Mazimdar e Singh}{GOSEVA-POPSTOJANOVA;
+  MAZIMDAR; SINGH}{2004}
+{GOSEVA-POPSTOJANOVA, K.; MAZIMDAR, S.; SINGH, A.~D. Empirical study of
+  session-based workload and reliability for web servers. In:
+  \emph{Proceedings of the 15th International Symposium on Software Reliability
+  Engineering (ISSRE)}. Saint-Malo, France: [s.n.], 2004.}
+
 \bibitem[Jones et al. 2016]{jones2016slo}
 \abntrefinfo{Jones et al.}{JONES et al.}{2016}
 {JONES, C. et al. Service level objectives. In:  BEYER, B. et al. (Ed.).
@@ -31,6 +39,11 @@ Dispon{\'\i}vel em: \url{https://sre.google/sre-book/embracing-risk/}. Acesso
 Dispon{\'\i}vel em:
   \url{https://sre.google/sre-book/service-level-objectives/}. Acesso em: 6
   nov. 2026.}
+
+\bibitem[O'Connor e Kleyner 2012]{oconnor2012}
+\abntrefinfo{O'Connor e Kleyner}{O'CONNOR; KLEYNER}{2012}
+{O'CONNOR, P. D.~T.; KLEYNER, A. \emph{Practical Reliability Engineering}. 5.
+  ed. Chichester: John Wiley \& Sons, 2012.}
 
 \bibitem[{OpenTelemetry Authors} 2026]{otel_site}
 \abntrefinfo{{OpenTelemetry Authors}}{{OpenTelemetry Authors}}{2026}
@@ -45,6 +58,12 @@ Dispon{\'\i}vel em: \url{https://opentelemetry.io/docs/concepts/signals/}.
   fail, and what can be done about it? In:  \emph{Proceedings of the 4th USENIX
   Symposium on Internet Technologies and Systems (USITS)}. [S.l.: s.n.], 2003.
   p. 1--16.}
+
+\bibitem[Ruijters e Stoelinga 2015]{ruijters2015}
+\abntrefinfo{Ruijters e Stoelinga}{RUIJTERS; STOELINGA}{2015}
+{RUIJTERS, E.; STOELINGA, M. Fault tree analysis: A survey of the
+  state-of-the-art in modeling, analysis and tools.
+\emph{Computer Science Review}, v.~15, p. 29--62, 2015.}
 
 \bibitem[Schroeder e Gibson 2006]{schroeder2006}
 \abntrefinfo{Schroeder e Gibson}{SCHROEDER; GIBSON}{2006}
