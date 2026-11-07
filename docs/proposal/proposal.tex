@@ -83,8 +83,10 @@ Entre os trabalhos revisados, Tian, Rudraraju e Li calculam índices a partir de
 Espera-se como resultado deste trabalho:
 
 \begin{itemize}
-  \item Visão mais realista da saúde do sistema — os resultados devem estar em consonância com a opinião dos usuários;
-  \item Melhoria da visibilidade de problemas para usuários do Grafana.
+  \item Um \textit{plugin} do Grafana que calcula, a partir das métricas padronizadas pelo OpenTelemetry, a confiabilidade por requisição ($R_{\mathrm{erro}}$ e $R_{\mathrm{lat}}$), a disponibilidade em relação ao SLO, o MTBF e o MTTR;
+  \item A generalização do \textit{plugin}: qualquer sistema que exporte métricas convertíveis em contagens de sucesso, falha e duração passa a ter os mesmos índices de confiabilidade, levando a percepção do usuário para além do sistema estudado;
+  \item Os valores desses índices para o sistema estudado nos cerca de quinze dias de coleta, separando a parcela devida a erro da devida a lentidão;
+  \item Índices que reflitam a percepção de usuários e engenheiros: os episódios de falha detectados devem coincidir com os incidentes relatados no período.
 \end{itemize}
 
 \bibliography{references}

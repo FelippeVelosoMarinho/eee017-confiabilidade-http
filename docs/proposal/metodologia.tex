@@ -17,10 +17,10 @@ dados em qualquer sistema \cite{otel_site}. A métrica
 \texttt{http.server.request.duration} registra código de resposta, rota e
 duração de cada requisição. Os \textit{spans} de cliente de banco registram
 as consultas feitas pela API. Quando o banco não é instrumentado, sua falha
-é inferida pelo sinal que ela produz na API. O Grafana exibe as contagens
-por janela e o mapa de chamadas entre serviços (\textit{service graph}). As
-contagens são exportadas em CSV para uma planilha, onde os índices são
-calculados. A coleta usa tráfego real durante aproximadamente 15 dias,
+é inferida pelo sinal que ela produz na API. O Grafana exibe o mapa de chamadas
+entre serviços (\textit{service graph}), e um \textit{plugin} desenvolvido
+pelo grupo calcula os índices por janela. As contagens exportadas em CSV
+para uma planilha servem para conferir os valores do \textit{plugin}. A coleta usa tráfego real durante aproximadamente 15 dias,
 condicionada à autorização do responsável por cada fonte. Os dados
 chegam mascarados: só entram código de resposta, rota agregada e duração.
 
