@@ -1,0 +1,88 @@
+% =====================================================================
+% Seção de Metodologia — versão genérica, RASCUNHO para o grupo.
+% Incluída em proposal.tex por \input{metodologia}.
+% =====================================================================
+
+\section{Metodologia}
+
+O objeto é um sistema web genérico, em que a requisição parte do
+front-end, atravessa uma ou mais APIs e chega ao banco de dados. A análise
+mede o serviço do ponto de vista do usuário e cada componente do fluxo, e
+uma árvore de falhas combina os índices dos componentes para prever o do
+serviço.
+
+\textbf{Coleta.} Os componentes são instrumentados com o OpenTelemetry,
+cujas convenções semânticas padronizam as medidas de HTTP e de banco de
+dados em qualquer sistema \cite{otel_site}. A métrica
+\texttt{http.server.request.duration} registra código de resposta, rota e
+duração de cada requisição. Os \textit{spans} de cliente de banco registram
+as consultas feitas pela API. Quando o banco não é instrumentado, sua falha
+é inferida pelo sinal que ela produz na API. O Grafana exibe as contagens
+por janela e o mapa de chamadas entre serviços (\textit{service graph}). As
+contagens são exportadas em CSV para uma planilha, onde os índices são
+calculados. A coleta usa tráfego real durante 30 dias, condicionada à
+autorização do responsável por cada fonte, com mínimo de 10 dias. Os dados
+chegam mascarados: só entram código de resposta, rota agregada e duração.
+
+\textbf{Critério de falha.} A falha é medida do ponto de vista do usuário,
+como falha do serviço, e não só do componente \cite{oppenheimer2003}. Há
+dois modos de falha. No modo \textit{erro}, a requisição recebe código 5xx
+ou o código que a fonte usa para sinalizar falha percebida (por exemplo,
+401 em massa quando a perda do banco encerra sessões). Desse código, conta
+só o excesso sobre a taxa típica da rota, porque parte dele é uso normal
+\cite{goseva2004}. No modo \textit{lentidão}, a duração passa de
+$\tau = 200$~ms. O tempo é dividido em janelas de $\Delta = 5$~min, e só
+entram janelas com pelo menos 100 requisições, para que uma única falha
+não derrube o índice. Os SLOs são fixados antes da coleta, sem usar o
+desempenho observado \cite{jones2016slo}: $R^{*}_{\mathrm{erro}} = 99\%$ e
+$R^{*}_{\mathrm{lat}} = 95\%$.
+
+\textbf{I1 — confiabilidade por requisição.} Pelo modelo de Nelson, usado
+por \citeonline{tian2004} e \citeonline{goseva2004}, $R = 1-f/n$, em que $f$ é o número de requisições com falha e $n$ o total de
+requisições. $R$ é a probabilidade de uma requisição ser atendida
+corretamente. A razão normaliza as falhas pela carga \cite{tian2004} e
+aproxima a indisponibilidade percebida pelo usuário
+\cite{alvidrez2016risk}. O índice é calculado para cada modo de falha
+($R_{\mathrm{erro}}$ e $R_{\mathrm{lat}}$) e para os dois juntos, no
+período inteiro, por janela ($R_j$) e por componente ($R_i$). Os percentis
+95 e 99 da latência complementam $R_{\mathrm{lat}}$ como medida de
+variabilidade.
+
+\textbf{I2 — disponibilidade em relação ao SLO.} A janela $j$ está em
+falha quando $R_{\mathrm{erro},j} < R^{*}_{\mathrm{erro}}$ ou
+$R_{\mathrm{lat},j} < R^{*}_{\mathrm{lat}}$. A disponibilidade $A$ é a fração de janelas
+dentro do SLO.
+
+\textbf{I3 — MTBF e MTTR.} Uma sequência de janelas consecutivas em falha
+forma um episódio de falha. O MTBF é o tempo total dentro do SLO dividido
+pelo número de episódios, e o MTTR é a duração média dos episódios
+\cite{oconnor2012}. Como $A = \mathrm{MTBF}/(\mathrm{MTBF}+\mathrm{MTTR})$, os dois
+mostram se o serviço perde disponibilidade por falhar com frequência ou
+por demorar a se recuperar.
+
+\textbf{Árvore de falhas.} O evento topo é o serviço fora do SLO em uma
+janela \cite{ruijters2015}. A estrutura da árvore vem do \textit{service
+graph}. As camadas que a requisição atravessa em sequência (por exemplo
+front-end, API e banco) entram em uma porta OU, porque a falha de
+qualquer uma derruba o serviço. As instâncias redundantes de uma mesma
+camada entram em uma porta E, porque a camada só falha se todas falharem
+juntas \cite{oconnor2012}. Com $p_i$ igual à fração de janelas em que a
+instância $i$ falhou, e supondo falhas independentes, a probabilidade
+prevista de falha do serviço é
+\begin{equation}
+P_{\mathrm{prev}} = 1-\prod_{c}\Bigl(1-\prod_{i\in c} p_i\Bigr),
+\end{equation}
+em que $c$ percorre as camadas e $i$ as instâncias de cada camada. $P_{\mathrm{prev}}$ é comparado com a fração observada de janelas em
+falha, $1-A$. Se os dois valores forem próximos, a hipótese de
+independência se sustenta. Se o observado for maior, há uma causa comum
+afetando vários componentes ao mesmo tempo, como uma implantação com
+defeito, que pode ser identificada pela versão do serviço registrada na
+telemetria.
+
+\textbf{Declaração de uso de IA.}
+% [AJUSTAR] Completem com todas as ferramentas que o grupo usou.
+Ferramenta: Claude Opus 5.5 (Anthropic), em novembro de 2026. Finalidade:
+busca de referências, discussão de índices e rascunho desta seção.
+Estratégia: o grupo revisou e reescreveu o texto e conferiu as referências
+nas fontes originais. Responsabilidade: o conteúdo é de responsabilidade
+exclusiva dos autores.

@@ -15,7 +15,7 @@
 
 % Espaçamento entre linhas (ABNT: 1,5 para texto, mas twocolumn usa simples)
 \usepackage{setspace}
-\onehalfspacing
+\singlespacing
 
 % Fontes e tipografia
 \usepackage{times}
@@ -74,17 +74,9 @@ A avaliação da confiabilidade de serviços deve considerar as falhas percebida
 
 \citeonline{schroeder2006}, por sua vez, investigaram aproximadamente 23 mil falhas em 22 sistemas de computação de alto desempenho, ajustando distribuições estatísticas por máxima verossimilhança aos intervalos entre falhas e aos tempos de reparo. Os resultados indicaram bom ajuste das distribuições Weibull e gama para os intervalos entre falhas, ao contrário da exponencial, enquanto a lognormal representou melhor os tempos de reparo. Na perspectiva prática, o material do Google sobre \textit{Site Reliability Engineering} define indicadores (SLI) e objetivos (SLO) de nível de serviço, recomendando que o objetivo não seja escolhido com base no desempenho atual \cite{jones2016slo}, e trata a proporção de requisições bem-sucedidas como uma aproximação razoável da indisponibilidade não planejada \cite{alvidrez2016risk}.
 
-Entre os trabalhos revisados, Tian, Rudraraju e Li calculam índices a partir de logs, mas não ajustam distribuições de tempo até a falha; Schroeder e Gibson ajustam distribuições aos tempos entre falhas, mas não partem de logs HTTP; e Oppenheimer, Ganapathi e Patterson analisam causas, sem modelagem estatística dos tempos. Esta proposta busca combinar essas abordagens, estimando índices de confiabilidade e distribuições de tempo até a falha a partir de dados do [SISTEMA], com a falha definida por um objetivo de nível de serviço declarado.
+Entre os trabalhos revisados, Tian, Rudraraju e Li calculam índices a partir de logs, mas não ajustam distribuições de tempo até a falha; Schroeder e Gibson ajustam distribuições aos tempos entre falhas, mas não partem de logs HTTP; e Oppenheimer, Ganapathi e Patterson analisam causas, sem modelagem estatística dos tempos. Esta proposta busca combinar essas abordagens, estimando índices de confiabilidade e distribuições de tempo até a falha a partir de dados de sistemas web instrumentados com OpenTelemetry, com a falha definida por um objetivo de nível de serviço declarado.
 
-\section{Metodologia}
-
-A metodologia proposta compreende as seguintes etapas:
-
-\begin{enumerate}
-  \item Coleta de dados por 30 dias;
-  \item Padronização de sinais pelo OpenTelemetry;
-  \item Desenvolvimento de ferramentas de baixo custo para uso no Grafana.
-\end{enumerate}
+\input{metodologia}
 
 \section{Resultados Esperados}
 
