@@ -20,8 +20,8 @@ as consultas feitas pela API. Quando o banco não é instrumentado, sua falha
 é inferida pelo sinal que ela produz na API. O Grafana exibe as contagens
 por janela e o mapa de chamadas entre serviços (\textit{service graph}). As
 contagens são exportadas em CSV para uma planilha, onde os índices são
-calculados. A coleta usa tráfego real durante 30 dias, condicionada à
-autorização do responsável por cada fonte, com mínimo de 10 dias. Os dados
+calculados. A coleta usa tráfego real durante aproximadamente 15 dias,
+condicionada à autorização do responsável por cada fonte. Os dados
 chegam mascarados: só entram código de resposta, rota agregada e duração.
 
 \textbf{Critério de falha.} A falha é medida do ponto de vista do usuário,
