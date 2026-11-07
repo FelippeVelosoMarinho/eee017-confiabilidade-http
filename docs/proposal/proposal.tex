@@ -84,10 +84,18 @@ Espera-se como resultado deste trabalho:
 
 \begin{itemize}
   \item Um \textit{plugin} do Grafana que calcula, a partir das métricas padronizadas pelo OpenTelemetry, a confiabilidade por requisição ($R_{\mathrm{erro}}$ e $R_{\mathrm{lat}}$), a disponibilidade em relação ao SLO, o MTBF e o MTTR;
-  \item A generalização do \textit{plugin}: qualquer sistema que exporte métricas convertíveis em contagens de sucesso, falha e duração passa a ter os mesmos índices de confiabilidade, levando a percepção do usuário para além do sistema estudado;
-  \item Os valores desses índices para o sistema estudado nos cerca de quinze dias de coleta, separando a parcela devida a erro da devida a lentidão;
-  \item Índices que reflitam a percepção de usuários e engenheiros: os episódios de falha detectados devem coincidir com os incidentes relatados no período.
+  \item Um \textit{plugin} genérico, aplicável a qualquer sistema que exporte métricas convertíveis em contagens de sucesso, falha e duração, que passa a contar com os mesmos índices de confiabilidade;
+  \item Os valores desses índices para o sistema estudado nos cerca de quinze dias de coleta;
+  \item Indicadores que traduzam métricas técnicas em uma leitura direta da experiência do usuário, facilitando a identificação de problemas pelos engenheiros.
 \end{itemize}
+
+\section{Declaração de uso de IA}
+
+Ferramenta: Claude Opus 5.5 (Anthropic).
+
+Finalidade: Busca e validação de referências bibliográficas e discussão sobre os índices de confiabilidade.
+
+Estratégia: O grupo utilizou a ferramenta para sugerir referências bibliográficas complementares, que foram posteriormente verificadas nas fontes originais quanto à sua adequação ao contexto do trabalho. Também foi utilizada como apoio na discussão dos índices de confiabilidade inicialmente considerados, avaliando sua consistência com a literatura e a existência de alternativas mais adequadas ao sistema estudado. A seleção das referências e dos índices finais foi realizada pelo próprio grupo, sem utilização da ferramenta para a geração do texto do trabalho.
 
 \bibliography{references}
 
