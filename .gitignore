@@ -1,3 +1,14 @@
 logs/*.log
 __pycache__/
 .venv/
+.DS_Store
+
+# Artefatos de build do LaTeX da proposta
+docs/proposal/*.aux
+docs/proposal/*.bbl
+docs/proposal/*.blg
+docs/proposal/*.fdb_latexmk
+docs/proposal/*.fls
+docs/proposal/*.log
+docs/proposal/*.out
+docs/proposal/*.pdf

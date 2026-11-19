@@ -10,7 +10,7 @@ Desenho do TP EEE 017 ([eee017-confiabilidade-http](https://github.com/FelippeVe
 
 Narrativa visual + Mermaid: [`caixa-fechada-tp.md`](./caixa-fechada-tp.md).
 
-Base já fechada: opções A–F em [`opcoes-plugin-confiabilidade.md`](./opcoes-plugin-confiabilidade.md); preferência **A → B**; ajuste MLE fora do painel ([`ADAPTACAO_DADOS_REAIS.md`](./ADAPTACAO_DADOS_REAIS.md)). NASA-HTTP permanece só como **referência calibrada**, não como terceiro produto.
+A descrição do TP é a [proposta do grupo](./grupo_1_proposal.pdf). Este desenho é o motor genérico dessa proposta: o ajuste (Weibull, MTBF/MTTR, \(P(S>L)\)) fica fora do painel; o Grafana mostra o estado e a curva.
 
 ---
 
@@ -75,7 +75,7 @@ UnitRecord = {
 
 ```json
 {
-  "dominio": "shark.funnel_3m | sabia.decrypt | nasa.http",
+  "dominio": "shark.funnel_3m | sabia.decrypt",
   "failure_spec": {
     "window": "1d | 15m",
     "predicate": "error_rate > threshold OR relative_latency > k OR drop > threshold OR roi < threshold",
@@ -173,16 +173,17 @@ Indicadores do TP (matemática **igual** dentro da caixa):
 
 | Domínio | Ind. 1 — taxa/janela | Ind. 2 — Weibull / \(t\) / censura | Ind. 3 — \(L\), \(S\), \(P(S>L)\) |
 | --- | --- | --- | --- |
-| **NASA** (calibrador) | \(p_{404}\) 30 min; \(u_0=\)P95 | \(t=\) fim da 1ª janela ruim; dia limpo = censura 1440 min | \(L=p_{404}\); \(S\sim\mathcal{N}(u_0,\sigma)\) |
 | **Shark funil 3m** | drop da etapa (ou ROI) na janela diária vs limiar relativo | unidade `dia×cliente`; \(t\) até 1ª janela ruim no horizonte 3m; campanha/cliente sem estouro = censura | \(L=\) drop ou 1/ROI; \(S=\) meta de drop / ROI mínimo |
 | **Sabia decrypt** | taxa de falha de decrypt na janela (5–15 min) vs P95 móvel | unidade = dia; \(t\) até 1ª janela ruim; dia limpo = censura | \(L=\) taxa ou atraso relativo \(d/\mathrm{P50}\); \(S=\) SLO ou P99 da camada |
 
-### Calibração (igual espírito NASA)
+### Calibração
 
-- Janela e limiar para a **taxa de unidades que falham** ficar tipicamente ~20–80%; senão Weibull não separa \(\beta\) de \(\eta\).
-- Ordem do TP: **critério de falha → amostra → ajuste**. Não herdar 30 min / 1,77% / 200 ms.
-- Unidade sem observação (apagão) **exclui** da amostra; não é censura.
-- Sabia: **jamais** limiar absoluto tipo 200 ms — só relativo à própria camada decrypt.
+A proposta fixa o critério do serviço instrumentado: janela \(\Delta = 5\,\mathrm{min}\), pelo menos 100 requisições, SLOs declarados antes da coleta (\(R^{*}_{\mathrm{erro}} = 99\%\), \(R^{*}_{\mathrm{lat}} = 95\%\)) e, no modo lentidão, \(\tau = 200\,\mathrm{ms}\).
+
+- A janela e o limiar de cada plug-in saem dos dados daquele cenário ou do SLO declarado para ele.
+- Ordem: critério de falha, depois amostra, depois ajuste. Para a Weibull separar \(\beta\) de \(\eta\), a taxa de unidades que falham fica tipicamente entre 20% e 80%.
+- Unidade sem observação (apagão) fica fora da amostra. Censura é a unidade observada até o fim sem cruzar o limiar.
+- Na camada Sabia, a latência entra como atraso relativo \(d / P50\) móvel. O \(\tau = 200\,\mathrm{ms}\) permanece o modo lentidão da proposta, no serviço, e não vira corte absoluto do decrypt.
 
 ---
 
@@ -230,7 +231,7 @@ Indicadores do TP (matemática **igual** dentro da caixa):
 2. Emite \(R(t)=\exp[-(t/\eta)^\beta]\).  
 3. Painel avalia a função — não reajusta.
 
-Contrato de saída: manter chaves atuais de `output/relatorio.json` (`escolha`, `weibull`, `kaplan_meier`, `carga_resistencia`, `amostra`) + `dominio`, `failure_spec`, `predicao`.
+Contrato de saída do motor, em `relatorio.json`: `escolha`, `weibull`, `kaplan_meier`, `carga_resistencia`, `amostra`, `dominio`, `failure_spec`, `predicao`.
 
 ---
 
@@ -243,10 +244,10 @@ Contrato de saída: manter chaves atuais de `output/relatorio.json` (`escolha`, 
 
 | Contexto | Limiar sugerido | Janela a calibrar |
 | --- | --- | --- |
-| NASA (já feito) | P95 → 1,77% | 30 min |
+| Proposta (serviço instrumentado) | SLO declarado: \(R^{*}_{\mathrm{erro}}=99\%\), \(R^{*}_{\mathrm{lat}}=95\%\); lentidão em \(\tau=200\,\mathrm{ms}\) | 5 min, com pelo menos 100 requisições |
 | Shark funil (drop) | P80 móvel do drop por etapa | 1 dia |
 | Shark funil (ROI) | P20 móvel de ROI ou SLO mínimo | 1 dia |
-| Sabia decrypt | P95 móvel da taxa de erro; latência: P99 móvel | 5–15 min |
+| Sabia decrypt | P95 móvel da taxa de erro; latência: \(d/P50\) móvel | 5–15 min |
 
 \(S\) observável: SLO ± σ, IC histórico, ou percentil. Índice: \(R=P(S>L)\) por Monte Carlo.
 
@@ -281,7 +282,7 @@ Passo a passo visual (sequência Mermaid): [`caixa-fechada-tp.md`](./caixa-fecha
 - WhatsApp Shark neste ciclo.  
 - Inventar CSV do funil.  
 - Treinar LLM / classificador como “confiabilidade”.  
-- Limiar 200 ms.  
+- Usar \(\tau = 200\,\mathrm{ms}\) como corte da camada Sabia decrypt. Esse valor é o modo lentidão da proposta, no serviço instrumentado.  
 - MLE no browser como linha principal.
 
 ---
@@ -294,4 +295,4 @@ Passo a passo visual (sequência Mermaid): [`caixa-fechada-tp.md`](./caixa-fecha
 4. **Plugin:** A → A′ → B → preditivo; MLE só em Python.  
 5. Visual completo: [`caixa-fechada-tp.md`](./caixa-fechada-tp.md).
 
-Referências: [`opcoes-plugin-confiabilidade.md`](./opcoes-plugin-confiabilidade.md), [`guia-plugin-grafana.md`](./guia-plugin-grafana.md), [README](../README.md) / [PLANNER.md](../PLANNER.md) / [`ADAPTACAO_DADOS_REAIS.md`](./ADAPTACAO_DADOS_REAIS.md) do experimento NASA.
+Referências: [proposta do grupo](./grupo_1_proposal.pdf), [descrição em Markdown](./proposta.md), [caixa fechada](./caixa-fechada-tp.md), [README](../README.md).

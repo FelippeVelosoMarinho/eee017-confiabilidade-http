@@ -210,13 +210,13 @@ sequenceDiagram
 
 ---
 
-## 8. NASA como calibrador (não é o 3º produto)
+## 8. Mesmo motor, dois cenários
 
-A caixa já foi calibrada no experimento NASA-HTTP. Shark e Sabia **reutilizam** a mesma matemática; não são um segundo/terceiro TP. Na apresentação: “mesma caixa, dois plug-ins de domínio”.
+A descrição do estudo está na [proposta do grupo](./grupo_1_proposal.pdf): sistema distribuído, falha do ponto de vista do usuário, plugin Grafana com I1, I2 e I3. Shark e Sabia são os dois cenários que entram nesse motor pelas mesmas portas.
 
 ```mermaid
 flowchart LR
-  NASA["NASA HTTP<br/>(referência calibrada)"] -.->|"mesma caixa"| BOX["Motor ①②③"]
+  PROP["Proposta do grupo<br/>OpenTelemetry · I1 I2 I3"] --> BOX["Motor ①②③"]
   SH["Shark funil 3m"] --> BOX
   SA["Sabia decrypt"] --> BOX
   BOX --> G["Grafana"]

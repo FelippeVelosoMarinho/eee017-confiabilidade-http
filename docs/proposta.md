@@ -1,40 +1,68 @@
-# Confiabilidade de sistemas de software distribuídos a partir de sinais Opentelemetry
+# Descrição do TP — confiabilidade de sistemas distribuídos a partir de sinais OpenTelemetry
 
-O tema de confiabilidade de software é um tema relativamente recente mas amplamente discutido, a ubiquidade de sistemas de software em diversas áreas da sociedade tornou-os complexos e mais críticos. Nas décadas mais recentes, com os avanços no campo da internet e sistemas de software dependentes dela, tornou-se prática comum separar diferentes partes complexas de aplicações em servidores conectados por redes [Ref martinf Fowler], isto é o que denominamos sistemas distribuídos. A partir dessa definição cada servidor em um sistema distribuído é tratado como um componente que pode falhar ou se comportar fora do esperado, similarmente a componentes de outros tipos de artefatos de engenharia.
+Texto de leitura da proposta do grupo 1. O documento entregue é [grupo_1_proposal.pdf](./grupo_1_proposal.pdf). A fonte LaTeX está em [proposal/](./proposal/).
 
-A prática que estuda a confiabilidade de sistemas web é conhecida como *software reliability engineering* (SRE) [Gooogle SRE] é prática comum no Brasil desde a metade da última década. Contudo esse campo ainda não é consistentemente aplicado em empresas brasileiras, porque o tema demanda alto investimento e planejamento estratégico de longo prazo. Portanto, sendo inviável para médias e pequenas empresas. Os custos relacinadoss a tempo, pessoas e fornecedores são altos demais para uma adoção da prática que realmente impacte positivamente a confiabilidade de sistemas novos.
+**Autores:** Felippe Veloso Marinho, Josoe Santos Queiroz, Maria Eduarda Sampaio, Matheus Amorim Soares Salles, Raphael Lucas Silva Amaral. 2026.
 
-Normalmente um dos fornecedores mais caros da SRE é o fornecedor de monitoramento, que são empresas cujo maior produto é uma suíte de bibliotecas e ferramentas de núvem especializados em coletar e processar dados de monitoramento de sistemas distribuídos[]. Contudo o número relativamente pequeno de fornecedores competitivos leva a preços altos e ao efeito de vendor lock-in, que é a incapacitação de uma organização de substiuir o fornecedor porque é complexo ou caro de mais. Essa situação irrita o mercado de software há anos e para tanto foi criado a Opentelemetry[site otel]. essa iniciativa de código aberto que tem como finalidade padronizar e simplificar a adoção de software de monitoramento.
+## Resumo
 
-## Descrição do sistema
+O trabalho estuda a confiabilidade de sistemas de software distribuídos com sinais do padrão aberto OpenTelemetry. A iniciativa busca levar práticas de *Site Reliability Engineering* (SRE) a médias e pequenas empresas brasileiras, com menos dependência de fornecedores proprietários de monitoramento.
 
-- Iniciar com um servidor simples e mostrar a stack LGTM com base nos dados de um sistema
-- Adicionar um segundo e mostrar os princípios se repetindo
-- Aplicar o padrão para N servidores interconectados com redundância ou não. Nessa fase podemos usar algorítimos de grafos e as formulas de probabilidade combinada (independente e dependente).
+## 1. Introdução
 
-## Revisão de literatura
+Sistemas de software estão em toda parte e ficaram mais complexos e mais críticos. Separar partes de uma aplicação em servidores ligados por rede é o que chamamos de sistema distribuído: cada servidor é um componente que pode falhar ou sair do esperado.
 
-- Livros de SRE do Gooogle
-- Artigos da IEEE
-- Artigos da Thoughtworks (martinfowler.com)
+A prática voltada à confiabilidade de sistemas web é o SRE. No Brasil ela é comum desde a metade da última década, e ainda assim chega pouco às médias e pequenas empresas: pede investimento e planejamento longos, e o fornecedor de monitoramento é uma das peças mais caras. Poucos fornecedores competitivos elevam o preço e criam *vendor lock-in*. O OpenTelemetry existe para padronizar e simplificar a coleta desses sinais em software aberto.
 
-## Metodologia
+## 2. Descrição do sistema
 
-- Coleta de dados por 30d
-- Padronização de sinais pelo Opentelemetry
-- Desenvolvimento de ferramentas baratas para usar no grafana
+A proposta mede uma requisição que parte do front-end, atravessa uma ou mais APIs e chega a consultas de banco. Vários serviços participam do mesmo fluxo. HTTP, banco, CPU e memória seguem a especificação do OpenTelemetry: um servidor instrumentado entrega esses dados no mesmo formato, qualquer que seja a finalidade.
 
-## Resultados esperado
+Os exemplos com que o grupo já trabalha são dois, e os dois são clínicos.
 
-- Visão mais realista da saúde do sistema - os resultaodos devem estar em par com a opinião do usuário
-- Melhoria da visibilidade de problemas para usuários do grafana
+- O primeiro, já em operação no atendimento clínico, tem a rota de prontuário entre os caminhos. Quando o banco deixa de responder, as sessões são encerradas por segurança e as respostas HTTP 401 sobem. O banco não é medido diretamente. Parte desses 401 é autenticação normal. No modo de tempo, a resposta percebida como rápida fica abaixo de 200 ms.
+- O segundo é uma aplicação web em teste por psicólogos, também com front-end, API e banco, no apoio ao registro da sessão clínica.
 
-## Declaração de uso de inteligência artificial
+O estudo não se apoia num único exemplo. Nos dois há dado clínico, e nos dois a liberação desse dado ainda depende de autorização, inclusive de quais campos entrariam. Se nenhuma autorização se confirmar, outro servidor instrumentado ocupa o lugar, com o código de erro que representar a falha percebida nele.
 
-- Geração de código para testes
-- Correção de texto
-- formatação latex
+Os dados liberados chegam mascarados. Entram código de estado, rota agregada, duração e, quando existirem, as medidas de máquina. Identidade e conteúdo clínico ficam de fora. A coleta prevista é de cerca de quinze dias.
 
-## Referências
+## 3. Revisão de literatura
 
-O LatexGera
+A avaliação considera a falha percebida pelo usuário, não só a falha do componente isolado. A literatura de referência combina três linhas: falha de serviço diante de falha de componente (Oppenheimer, Ganapathi e Patterson, 2003); confiabilidade por requisição \(R = 1 - f/n\) a partir de logs, com a carga no denominador (Tian, Rudraraju e Li, 2004; Nelson); e ajuste por máxima verossimilhança de distribuições aos tempos entre falhas, com Weibull e gama à frente da exponencial (Schroeder e Gibson, 2006). Do lado prático, o material de SRE do Google separa SLI e SLO e recomenda que o objetivo não seja escolhido a partir do desempenho já observado.
+
+O que a proposta junta: índices de confiabilidade e distribuição do tempo até a falha, em sistemas web instrumentados com OpenTelemetry, com a falha definida por um SLO declarado. As referências completas estão no PDF.
+
+## 4. Metodologia
+
+O objeto é um sistema web genérico. A análise mede o serviço do ponto de vista do usuário e cada componente do fluxo, para indicar onde as falhas se concentram. O produto dessa análise é um plugin do Grafana.
+
+**Coleta.** Os componentes são instrumentados com OpenTelemetry. A métrica `http.server.request.duration` registra código de resposta, rota e duração. Os spans de cliente de banco registram as consultas feitas pela API. Quando o banco não é instrumentado, a falha dele é inferida pelo sinal que aparece na API. O plugin calcula os índices por janela; um CSV com as mesmas contagens serve para conferir o plugin. A coleta usa tráfego real por cerca de 15 dias, condicionada à autorização do responsável por cada fonte. Os dados são mascarados: código de resposta, rotas sem identificadores e as métricas de interesse.
+
+**Critério de falha.** Há dois modos.
+
+- **Erro.** A requisição recebe 5xx, ou o código com que a fonte sinaliza falha percebida (por exemplo, 401 em massa quando a perda do banco encerra sessões). Conta só o excesso sobre a taxa típica da rota, porque parte desse código é uso normal.
+- **Lentidão.** A duração passa de \(\tau = 200\,\mathrm{ms}\).
+
+O tempo é dividido em janelas de \(\Delta = 5\,\mathrm{min}\). Só entram janelas com pelo menos 100 requisições. Os SLOs são fixados antes da coleta: \(R^{*}_{\mathrm{erro}} = 99\%\) e \(R^{*}_{\mathrm{lat}} = 95\%\).
+
+**I1 — confiabilidade por requisição.** \(R = 1 - f/n\), com \(f\) requisições em falha e \(n\) o total. \(R\) é a probabilidade de uma requisição ser atendida corretamente. O índice sai para cada modo (\(R_{\mathrm{erro}}\) e \(R_{\mathrm{lat}}\)) e para os dois juntos, no período inteiro, por janela (\(R_j\)) e por componente (\(R_i\)). Os percentis 95 e 99 da latência complementam \(R_{\mathrm{lat}}\).
+
+**I2 — disponibilidade em relação ao SLO.** A janela \(j\) está em falha quando \(R_{\mathrm{erro},j} < R^{*}_{\mathrm{erro}}\) ou \(R_{\mathrm{lat},j} < R^{*}_{\mathrm{lat}}\). A disponibilidade \(A\) é a fração de janelas dentro do SLO.
+
+**I3 — MTBF e MTTR.** Uma sequência de janelas consecutivas em falha forma um episódio. O MTBF é o tempo total dentro do SLO dividido pelo número de episódios. O MTTR é a duração média dos episódios. Como \(A = \mathrm{MTBF}/(\mathrm{MTBF}+\mathrm{MTTR})\), os dois mostram se o serviço perde disponibilidade por falhar com frequência ou por demorar a se recuperar.
+
+## 5. Resultados esperados
+
+- Um plugin do Grafana que, a partir das métricas do OpenTelemetry, calcula \(R_{\mathrm{erro}}\) e \(R_{\mathrm{lat}}\), a disponibilidade em relação ao SLO, o MTBF e o MTTR.
+- Um plugin genérico, aplicável a qualquer sistema que exporte contagens de sucesso, falha e duração.
+- Os valores desses índices para o sistema estudado nos cerca de quinze dias de coleta.
+- Indicadores que traduzam a métrica técnica numa leitura da experiência do usuário.
+
+## 6. Onde isso entra na caixa fechada
+
+O plugin genérico da proposta é o motor descrito em [caixa-fechada-tp.md](./caixa-fechada-tp.md). A caixa recebe uma fonte e um `FailureSpec` e devolve os indicadores. Os cenários em desenvolvimento são o funil Shark (`shark.funnel_3m`) e o decrypt da Sabia (`sabia.decrypt`). Os dois passam pelas mesmas portas. O desenho do contrato está em [plugin-preditivo-confiabilidade.md](./plugin-preditivo-confiabilidade.md).
+
+## Declaração de uso de IA
+
+Conforme a proposta: ferramenta Claude Opus 5.5 (Anthropic), usada na busca e validação de referências bibliográficas e na discussão dos índices. As referências sugeridas foram conferidas nas fontes originais. A seleção das referências e dos índices finais foi do grupo. A ferramenta não gerou o texto do trabalho.
