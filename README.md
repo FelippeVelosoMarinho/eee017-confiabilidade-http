@@ -39,6 +39,8 @@ O painel abre em [http://localhost:3000/d/nasa-404/nasa-http-e28094-taxa-de-404]
 ## Documentos
 
 - [PLANNER.md](PLANNER.md) — decisões do experimento, janela, Weibull e carga–resistência.
+- [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md) — TP em caixa fechada (Shark funil 3m × Sabia decrypt).
+- [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md) — contrato do plugin preditivo + Grafana.
 - [docs/ADAPTACAO_DADOS_REAIS.md](docs/ADAPTACAO_DADOS_REAIS.md) — o que muda quando a fonte deixar de ser o log histórico e passar a ser telemetria de um serviço em operação, e os tópicos da matéria para revisar antes dessa etapa.
 - [docs/OrientacoesTrabalhoPratico.pdf](docs/OrientacoesTrabalhoPratico.pdf) — orientações do trabalho prático (proposta até 06/11/2026, documento final até 25/11/2026, apresentações em 25/11 e 30/11).
 
