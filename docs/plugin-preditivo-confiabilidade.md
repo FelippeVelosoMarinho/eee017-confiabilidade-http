@@ -1,298 +1,207 @@
-# Plugin Grafana de análise preditiva — caixa fechada (Shark × Sabia)
+# Plugin de confiabilidade — o que entra, o que você acompanha
 
-Desenho do TP EEE 017 ([eee017-confiabilidade-http](https://github.com/FelippeVelosoMarinho/eee017-confiabilidade-http)) como **sistema em caixa fechada**: o motor dos três indicadores é fixo; dois **plug-ins de cenário** alimentam o mesmo contrato de entrada.
+Plugin do Grafana para o TP de EEE 017. O motor é uma caixa fechada: a matemática não muda. O que muda é o **adaptador**, isto é, a peça que lê o arquivo do seu cenário e entrega os eventos no mesmo formato.
 
-| Decisão do usuário (obrigatória) | Como entra neste desenho |
+Há dois adaptadores neste ciclo:
+
+| Adaptador | Para quem serve | Identificador |
+| --- | --- | --- |
+| **Funil de vendas** | Quem acompanha uma jornada de várias etapas, do anúncio ou da visita até a compra | `funil.vendas` |
+| **Requisição HTTPS** | Quem acompanha um serviço web: código de resposta, rota e duração | `http.request` |
+
+Os dois alimentam os mesmos painéis. Trocar de adaptador é trocar o arquivo e o critério de falha. O desenho da caixa está em [`caixa-fechada-tp.md`](./caixa-fechada-tp.md). A descrição do trabalho está na [proposta do grupo](./grupo_1_proposal.pdf).
+
+Nenhum arquivo deve trazer nome de pessoa, de conta, de cliente ou de produto. Identificadores são códigos opacos que você escolhe.
+
+---
+
+## Para que serve
+
+Um percentual solto de erro não diz se o serviço está piorando, se a queda está numa etapa só, nem se o problema é falhar toda hora ou demorar para voltar. O plugin transforma o arquivo que você anexa em quatro leituras estáveis:
+
+| Leitura | O que responde |
 | --- | --- |
-| **Shark** | Funil de **3 meses** de um cliente — CSV anexado no repo em breve; **não inventar dados**; documentar schema + placeholder |
-| **Sabia** | **Somente** requests de **desembrulho / descriptografia** — não o pipeline KMS→LLM→… |
-| Forma | Uma caixa; dois cenários; mesmas portas |
+| **Confiabilidade por evento** \(R = 1 - f/n\) | De cada evento, qual fração foi atendida como o esperado |
+| **Disponibilidade** | Qual fração das janelas ficou dentro do objetivo que você declarou |
+| **MTBF e MTTR** | O serviço perde o objetivo porque falha com frequência, ou porque demora a se recuperar |
+| **Tempo até a primeira janela ruim** | Em quanto tempo uma unidade (um dia, um segmento) cruza o limite, com os períodos saudáveis preservados como censura |
 
-Narrativa visual + Mermaid: [`caixa-fechada-tp.md`](./caixa-fechada-tp.md).
+Em cima disso a caixa ainda ajusta uma Weibull e estima \(P(S>L)\): a chance de a tolerância (o objetivo, ou a faixa histórica) ainda cobrir a carga observada. O ajuste roda fora do navegador. O painel mostra o resultado.
 
-A descrição do TP é a [proposta do grupo](./grupo_1_proposal.pdf). Este desenho é o motor genérico dessa proposta: o ajuste (Weibull, MTBF/MTTR, \(P(S>L)\)) fica fora do painel; o Grafana mostra o estado e a curva.
-
----
-
-## 0. Visão: caixa fechada
-
-```text
-  [Plug-in Shark: funil 3m] ──┐
-                              ├──▶ portas (fonte, FailureSpec) ──▶ adaptador
-  [Plug-in Sabia: decrypt]  ──┘              │
-                                             ▼
-                                      UnitRecord[]
-                                             │
-                    ┌────────────────────────┴────────────────────────┐
-                    │              CAIXA FECHADA                       │
-                    │  ① taxa×janela  ② Weibull+censura  ③ P(S>L)     │
-                    │              → relatorio.json / gauges           │
-                    └────────────────────────┬────────────────────────┘
-                                             ▼
-                                      Grafana (A + B)
-```
-
-Trocar de Shark para Sabia = trocar adaptador + fonte + `FailureSpec`. O motor e os painéis **não** mudam.
+**Vantagem comum aos dois adaptadores.** O mesmo painel serve para um funil e para um serviço HTTPS. Você declara o objetivo antes de olhar a série, compara janelas com volume suficiente e vê o estado de cada unidade: dentro do objetivo, falhou no instante \(t\), ou foi observada até o fim sem cruzar o limite. Um intervalo sem dado sai da amostra. Ele não vira um dia “perfeito” nem uma falha inventada no fim.
 
 ---
 
-## 1. Contrato único de entrada
+## Adaptador de funil de vendas
 
-Todo cenário entra pelas mesmas portas. Sem isso, cada painel inventa “falha” de novo e os três indicadores deixam de ser comparáveis.
+Use quando a pergunta for comercial: em que etapa as pessoas saem, e se um dia ou um segmento está pior do que o habitual daquele funil.
+
+### O que você insere
+
+Um CSV, uma linha por evento da jornada. Caminho previsto: `data/funil/eventos.csv`. Enquanto o arquivo real não estiver anexado, o repositório guarda só este contrato.
+
+| Coluna | Tipo | Obrigatória | O que colocar |
+| --- | --- | --- | --- |
+| `timestamp` | ISO-8601 | sim | Instante do evento |
+| `segmento_id` | string | sim | Código opaco do recorte (conta, praça, campanha). Sem nome |
+| `etapa` | enum | sim | `impressao`, `visita`, `carrinho`, `checkout` ou `compra`. Se a sua jornada usa outros nomes, mapeie para estes cinco antes de anexar |
+| `evento_id` | string | sim | Identificador único da linha |
+| `sessao_id` | string | recomendado | Amarra os passos da mesma jornada. Também opaco |
+| `custo` | number | só se quiser ROI | Custo atribuído ao evento |
+| `receita` | number | só se quiser ROI | Receita da conversão. Zero se não houve compra |
+
+Janela padrão: **1 dia**. Unidade que o painel acompanha: **dia × segmento**. Horizonte típico do arquivo: cerca de três meses, o que o CSV realmente cobrir. Um dia sem eventos naquele segmento fica de fora. Um dia com tráfego que não cruza o limite entra como censura.
+
+### Critério de falha que você declara
+
+Escolha um, ou os dois:
+
+- **Queda de etapa.** A passagem de uma etapa para a seguinte fica pior do que o percentil móvel daquela mesma etapa (ponto de partida: P80).
+- **Retorno.** Se você preencheu `custo` e `receita`, o ROI do dia fica abaixo do objetivo declarado ou do percentil móvel baixo da própria série (ponto de partida: P20).
+
+### O que você passa a acompanhar
+
+- A etapa em que o funil esvazia, dia a dia, por segmento.
+- Se o dia daquele segmento está saudável, falhou e em que momento, ou chegou ao fim sem estouro.
+- Confiabilidade da jornada, fração de dias dentro do objetivo, tempo médio entre dias ruins e duração média do episódio ruim.
+- Quando houver custo e receita, a mesma leitura para o retorno, ao lado da queda de etapa.
+
+### Vantagem
+
+A queda deixa de ser uma impressão sobre o mês inteiro. Você vê qual etapa cedeu, se o problema se repete no mesmo segmento e se os dias bons ainda sustentam a curva. Dois segmentos entram no mesmo painel porque o identificador é um código, não um nome.
+
+---
+
+## Adaptador de requisição HTTPS
+
+Use quando a pergunta for a do serviço: a requisição chegou, com que código, por qual rota e em quanto tempo. Vale para qualquer servidor que exporte essas três medidas. O banco, quando não é medido direto, aparece pelo efeito na API (códigos e duração).
+
+### O que você insere
+
+Um CSV ou JSONL, uma linha por requisição. Caminho previsto: `data/http/requisicoes.csv`.
+
+| Coluna | Tipo | Obrigatória | O que colocar |
+| --- | --- | --- | --- |
+| `timestamp` | ISO-8601 | sim | Instante em que a requisição terminou |
+| `rota` | string | sim | Rota agregada. `/pedidos/123` vira `/pedidos/{id}`. Sem identificador no caminho |
+| `status` | number | sim | Código HTTP |
+| `duracao_ms` | number | sim | Duração da requisição |
+| `request_id` | string | sim | Correlação. Sem corpo, sem cabeçalho, sem credencial |
+| `componente` | string | não | Papel no fluxo: `front`, `api` ou `banco` |
+
+Janela padrão: **5 minutos**. Só entra janela com **pelo menos 100 requisições**, para uma falha isolada não derrubar o índice. Unidade que o painel acompanha: **dia de serviço**. Um dia sem tráfego fica de fora. Um dia observado até o fim sem janela ruim entra como censura, em 1440 minutos.
+
+### Critério de falha que você declara antes da coleta
+
+Dois modos, os mesmos da proposta:
+
+- **Erro.** A requisição recebe 5xx, ou o código com que aquele serviço sinaliza falha percebida. Conta o excesso sobre a taxa típica da rota, porque parte dos 4xx é uso normal. Objetivo de partida: \(R^{*}_{\mathrm{erro}} = 99\%\).
+- **Lentidão.** A duração passa de \(\tau = 200\,\mathrm{ms}\). Objetivo de partida: \(R^{*}_{\mathrm{lat}} = 95\%\).
+
+Uma janela falha quando \(R_{\mathrm{erro}}\) ou \(R_{\mathrm{lat}}\) daquela janela fica abaixo do objetivo. Se a série ainda é curta para um objetivo fixo, o `FailureSpec` aceita percentil móvel da própria rota. O corte de 200 ms é o objetivo do serviço, declarado antes de olhar os dados. Ele não é um limite copiado de outra camada.
+
+### O que você passa a acompanhar
+
+- \(R_{\mathrm{erro}}\) e \(R_{\mathrm{lat}}\), no período, por janela e por componente.
+- Os percentis 95 e 99 da duração, ao lado da fração de requisições lentas.
+- A fração de janelas de 5 minutos dentro do objetivo.
+- Episódios de janelas ruins seguidas: de quanto em quanto tempo começam (MTBF) e quanto duram (MTTR).
+- O estado do dia: dentro do objetivo, primeira janela ruim no minuto \(t\), ou censurado.
+
+### Vantagem
+
+A leitura fica a da pessoa que usa o serviço, não a de um componente isolado. Rota agregada e código opaco permitem juntar vários serviços no mesmo plugin sem publicar quem acessou o quê. O mínimo de 100 requisições e o excesso sobre a taxa típica separam uma lentidão real de um punhado de acessos ou de um código que já é comum naquela rota.
+
+---
+
+## O que os dois mostram no Grafana
+
+| Painel | Você vê | Você não precisa calcular |
+| --- | --- | --- |
+| **A — estado** | Série da janela, objetivo, e cada unidade como OK, falhou em \(t\) ou censurada | A comparação da taxa com o limite |
+| **B — sobrevivência** | \(\beta\), \(\eta\), curva de Kaplan–Meier, \(P(S>L)\) e a tabela da amostra | O ajuste da Weibull e o Monte Carlo |
+
+Quando o modelo já está ajustado, o painel também mostra a confiabilidade residual \(R(t)=\exp[-(t/\eta)^{\beta}]\).
+
+---
+
+## Contrato que o adaptador entrega à caixa
 
 ```text
 ReliabilityInput = {
-  fonte,            // onde vivem os eventos (CSV funil, log/span decrypt, …)
-  definicao_falha,  // predicado + limiar relativo + elegibilidade  (= FailureSpec)
-  unidade_amostral, // o que “sobrevive” ou “falha”
-  request_evento    // átomo observável
+  fonte,            // CSV ou JSONL do adaptador escolhido
+  definicao_falha,  // FailureSpec: janela, predicado, limiar, elegibilidade
+  unidade_amostral, // funil: dia × segmento | https: dia de serviço
+  request_evento    // funil: 1 evento de etapa | https: 1 requisição
 }
-```
 
-### Campos obrigatórios
-
-| Campo | O que fixa | Shark (funil 3m) | Sabia (decrypt) |
-| --- | --- | --- | --- |
-| `fonte` | Sinal + schema mínimo | `data/shark/funil-3m.csv` (a anexar) | logs/spans de desembrulho |
-| `definicao_falha` | Predicado, limiar relativo, elegibilidade | drop de etapa > limiar **ou** ROI abaixo do SLO | `decrypt_fail` / `key_mismatch` > limiar **ou** duração > P99 da camada |
-| `unidade_amostral` | Uma linha na tabela de sobrevivência | `dia × cliente` | dia de serviço |
-| `request_evento` | Contagem / atributo | 1 evento de etapa do funil | 1 operação decrypt |
-
-### Saída do adaptador → entrada da caixa
-
-```text
 UnitRecord = {
-  unit_id,          // Shark: 2025-08-06×cliente_X | Sabia: 2025-08-06
-  t_min,            // tempo até falha ou até censura
-  censored,         // true se terminou sem cruzar limiar
-  cause?,           // Shark: drop_checkout | roi_baixo | …  Sabia: decrypt_fail | key_mismatch | latency_rel
-  windows[],        // agregados por janela (ind. 1 e carga L)
-  meta              // { dominio: "shark.funnel_3m" | "sabia.decrypt", … }
+  unit_id,     // 2026-08-06×segmento | 2026-08-06
+  t_min,       // tempo até a falha ou até a censura
+  censored,    // true se a unidade terminou sem cruzar o limite
+  cause?,      // funil: drop_etapa | roi_baixo
+               // https: erro | lentidao | timeout
+  windows[],
+  meta         // { dominio: "funil.vendas" | "http.request" }
 }
 ```
-
-### FailureSpec (JSON estável)
 
 ```json
 {
-  "dominio": "shark.funnel_3m | sabia.decrypt",
+  "dominio": "funil.vendas | http.request",
   "failure_spec": {
-    "window": "1d | 15m",
-    "predicate": "error_rate > threshold OR relative_latency > k OR drop > threshold OR roi < threshold",
-    "threshold_mode": "rolling_p95 | rolling_p20 | fixed_slo | ic_upper",
+    "window": "1d | 5m",
+    "predicate": "drop > threshold OR roi < threshold OR error_rate > threshold OR latency > tau",
+    "threshold_mode": "fixed_slo | rolling_p95 | rolling_p80 | rolling_p20",
     "threshold_value": null,
     "eligibility": "min_events_per_window"
   }
 }
 ```
 
----
-
-## 2. Plug-ins de cenário
-
-### 2.1 Shark — funil de 3 meses (um cliente)
-
-| Campo | Valor |
-| --- | --- |
-| `dominio` | `shark.funnel_3m` |
-| fonte | CSV do funil do cliente (3 meses). **Arquivo real ainda não anexado** — ver schema e placeholder abaixo |
-| falha | (A) **jornada**: drop na etapa > limiar relativo daquela etapa; (B) **orçamento** (opcional): ROI da janela < limiar relativo / SLO |
-| unidade | `dia × cliente` |
-| evento | impressão → cardápio → carrinho → checkout → compra |
-| horizonte | 3 meses (amostra completa do CSV) |
-
-**Fora deste plug-in (agora):** WhatsApp 1:1 / IA Shark — não misturar no CSV do funil.
-
-#### O que o usuário anexa no repo
-
-```text
-data/shark/funil-3m.csv            ← arquivo real (anexar em breve; NÃO inventar)
-data/shark/funil-3m.PLACEHOLDER    ← “cole o CSV aqui”
-data/shark/funil-3m.schema.md      ← contrato de colunas (abaixo)
-```
-
-#### Schema esperado do funil (contrato de entrada)
-
-| Coluna | Tipo | Obrigatória | Notas |
-| --- | --- | --- | --- |
-| `timestamp` | ISO-8601 | sim | instante do evento |
-| `cliente_id` | string | sim | define a fatia da unidade |
-| `campanha_id` | string | não | filtro opcional |
-| `etapa` | enum | sim | `impressao` \| `cardapio` \| `carrinho` \| `checkout` \| `compra` |
-| `evento_id` | string | sim | único |
-| `sessao_id` | string | recomendado | amarra a jornada |
-| `custo_anuncio` | number | se falha=ROI | |
-| `receita` | number | se falha=ROI | 0 se não converteu |
-| `meta` | string/JSON | não | tags |
-
-Até o CSV chegar: adaptadores e demos usam **somente** o schema + fixtures sintéticas **explicitamente marcadas como fake** (nunca misturadas com `funil-3m.csv`).
-
-### 2.2 Sabia — somente decrypt / desembrulho
-
-| Campo | Valor |
-| --- | --- |
-| `dominio` | `sabia.decrypt` |
-| fonte | logs / spans / métricas **só** da etapa de descriptografia |
-| falha | taxa de `decrypt_fail` / `key_mismatch` / `timeout` na janela > limiar relativo **ou** duração > P99 móvel da própria camada |
-| unidade | dia de serviço |
-| evento | 1 operação de decrypt |
-
-**Explicitamente fora de escopo deste TP:** consulta KMS/Infisical, LLM, criptografia de saída, persistência DB, interface. Essas camadas podem virar plug-ins futuros com o **mesmo** contrato; hoje a caixa só recebe decrypt.
-
-#### Schema mínimo de telemetria decrypt
-
-| Campo | Tipo | Significado |
-| --- | --- | --- |
-| `timestamp` | ISO-8601 | instante |
-| `status` | enum | `ok` \| `fail` \| `key_mismatch` \| `timeout` |
-| `duracao_ms` | number | duração |
-| `chave_id` | string | id lógico (sem material secreto) |
-| `request_id` | string | correlação |
-
----
-
-## 3. Os três indicadores nos dois cenários
-
-Indicadores do TP (matemática **igual** dentro da caixa):
-
-1. **Taxa de “erro” em janela** × limiar  
-2. **Weibull MLE com censura** (tempo até falha da unidade)  
-3. **Carga–resistência** \(P(S>L)\)
-
-### Glossário
+O motor grava `relatorio.json` com `escolha`, `weibull`, `kaplan_meier`, `carga_resistencia`, `amostra`, `dominio`, `failure_spec` e `predicao`.
 
 | Símbolo | Significado |
 | --- | --- |
-| janela | intervalo de agregação sem overlap |
-| \(L\) | carga observada na janela |
-| \(S\) | resistência (SLO / percentil / IC) |
-| \(t\) | tempo até 1ª falha (ou censura) |
-| censura | unidade terminou sem cruzar limiar — **não** inventar falha no fim |
+| janela | Intervalo sem sobreposição |
+| \(L\) | Carga observada na janela (queda, \(1/\mathrm{ROI}\), taxa de erro ou duração) |
+| \(S\) | Resistência: objetivo declarado, percentil ou intervalo |
+| \(t\) | Tempo até a primeira janela ruim, ou até o fim observado |
+| censura | A unidade foi observada até o fim e não cruzou o limite |
 
-### Tabela-mestre (escopo atual)
+Ordem do estudo: primeiro o critério de falha, depois a amostra, depois o ajuste. Para a Weibull separar forma e escala, a fração de unidades que falham fica tipicamente entre 20% e 80%. Com pouca história, o relatório registra a limitação.
 
-| Domínio | Ind. 1 — taxa/janela | Ind. 2 — Weibull / \(t\) / censura | Ind. 3 — \(L\), \(S\), \(P(S>L)\) |
-| --- | --- | --- | --- |
-| **Shark funil 3m** | drop da etapa (ou ROI) na janela diária vs limiar relativo | unidade `dia×cliente`; \(t\) até 1ª janela ruim no horizonte 3m; campanha/cliente sem estouro = censura | \(L=\) drop ou 1/ROI; \(S=\) meta de drop / ROI mínimo |
-| **Sabia decrypt** | taxa de falha de decrypt na janela (5–15 min) vs P95 móvel | unidade = dia; \(t\) até 1ª janela ruim; dia limpo = censura | \(L=\) taxa ou atraso relativo \(d/\mathrm{P50}\); \(S=\) SLO ou P99 da camada |
-
-### Calibração
-
-A proposta fixa o critério do serviço instrumentado: janela \(\Delta = 5\,\mathrm{min}\), pelo menos 100 requisições, SLOs declarados antes da coleta (\(R^{*}_{\mathrm{erro}} = 99\%\), \(R^{*}_{\mathrm{lat}} = 95\%\)) e, no modo lentidão, \(\tau = 200\,\mathrm{ms}\).
-
-- A janela e o limiar de cada plug-in saem dos dados daquele cenário ou do SLO declarado para ele.
-- Ordem: critério de falha, depois amostra, depois ajuste. Para a Weibull separar \(\beta\) de \(\eta\), a taxa de unidades que falham fica tipicamente entre 20% e 80%.
-- Unidade sem observação (apagão) fica fora da amostra. Censura é a unidade observada até o fim sem cruzar o limiar.
-- Na camada Sabia, a latência entra como atraso relativo \(d / P50\) móvel. O \(\tau = 200\,\mathrm{ms}\) permanece o modo lentidão da proposta, no serviço, e não vira corte absoluto do decrypt.
-
----
-
-## 4. Arquitetura Grafana (dentro / fora da caixa)
-
-### Decisão de tipo
-
-| Fase | Tipo Grafana | Papel |
+| Adaptador | Limiar de partida | Janela |
 | --- | --- | --- |
-| **A** | **panel** | Estado da unidade: OK / Falhou em \(t\) / Censurado; taxa×limiar; banda IC |
-| **B** | **panel** (+ JSON) | Visualiza \(\beta,\eta\), KM, \(P(S>L)\), tabela — **não** calcula MLE |
-| Preditivo | panel + job Python | \(R(t)\) / risco restante a partir do modelo já ajustado |
-
-**Não** começar por app nem por MLE no browser.
-
-### Onde cada coisa roda
-
-```text
-[Fonte Shark CSV | Sabia decrypt]
-        │
-        ▼
-[Adaptador]  ← shark_funnel_adapter | sabia_decrypt_adapter
-        │  emite UnitRecord[] + windows[] + FailureSpec
-        ▼
-[Motor — CAIXA FECHADA]  ← Python (MLE, KM, Monte Carlo P(S>L))
-        │  relatorio.json / gauges
-        ▼
-[Grafana]
-   ├─ Panel A: série + limiar + estado
-   └─ Panel B: R(t), KM, tabela, P(S>L)
-```
-
-| Responsabilidade | Browser (panel) | Backend Python |
-| --- | --- | --- |
-| Comparar taxa da janela com limiar | sim | opcional (alerta) |
-| Estado OK/Falhou/Censurado | sim (se receber série + spec) | sim (fonte da verdade) |
-| MLE Weibull, NLL, MTTF | **não** | **sim** |
-| Kaplan–Meier | só plot | sim |
-| Monte Carlo \(P(S>L)\) | não | sim |
-| Predição \(R(t^*)\) | sim **se** β,η já vierem | sim |
-
-### Predição sem MLE no painel
-
-1. Job Python ajusta \(\beta,\eta\) na amostra (Shark: 3 meses; Sabia: janela histórica de dias).  
-2. Emite \(R(t)=\exp[-(t/\eta)^\beta]\).  
-3. Painel avalia a função — não reajusta.
-
-Contrato de saída do motor, em `relatorio.json`: `escolha`, `weibull`, `kaplan_meier`, `carga_resistencia`, `amostra`, `dominio`, `failure_spec`, `predicao`.
+| Funil — queda de etapa | P80 móvel daquela etapa | 1 dia |
+| Funil — retorno | P20 móvel do ROI, ou o objetivo declarado | 1 dia |
+| HTTPS — erro | \(R^{*}_{\mathrm{erro}} = 99\%\), excesso sobre a taxa típica da rota | 5 min, com pelo menos 100 requisições |
+| HTTPS — lentidão | \(R^{*}_{\mathrm{lat}} = 95\%\) abaixo de \(\tau = 200\,\mathrm{ms}\) | 5 min, com pelo menos 100 requisições |
 
 ---
 
-## 5. Critérios de falha relativos
+## Como ligar
 
-1. Limiar sai dos **dados do próprio cenário** ou de um **SLO declarado**.  
-2. Preferir percentil rolante / IC dos N períodos anteriores (~30 unidades quando possível).  
-3. Latência Sabia só como atraso relativo: \(L_{\text{rel}} = d / P50_{\text{móvel}}\).  
-4. Pouca história ⇒ declarar limitação; não fingir precisão.
+1. Escolha o adaptador: `funil.vendas` ou `http.request`.
+2. Anexe o arquivo no caminho daquele adaptador, só com as colunas da tabela.
+3. Declare o `FailureSpec` (janela, predicado, modo do limiar, mínimo de eventos).
+4. Rode o adaptador. Ele emite `UnitRecord[]`.
+5. Rode o motor. Ele emite `relatorio.json`.
+6. Abra os painéis A e B.
 
-| Contexto | Limiar sugerido | Janela a calibrar |
-| --- | --- | --- |
-| Proposta (serviço instrumentado) | SLO declarado: \(R^{*}_{\mathrm{erro}}=99\%\), \(R^{*}_{\mathrm{lat}}=95\%\); lentidão em \(\tau=200\,\mathrm{ms}\) | 5 min, com pelo menos 100 requisições |
-| Shark funil (drop) | P80 móvel do drop por etapa | 1 dia |
-| Shark funil (ROI) | P20 móvel de ROI ou SLO mínimo | 1 dia |
-| Sabia decrypt | P95 móvel da taxa de erro; latência: \(d/P50\) móvel | 5–15 min |
-
-\(S\) observável: SLO ± σ, IC histórico, ou percentil. Índice: \(R=P(S>L)\) por Monte Carlo.
+Um arquivo de demonstração, se existir, fica marcado como fictício e separado do CSV real.
 
 ---
 
-## 6. Como ligar o cenário (resumo)
-
-1. Escolher plug-in: `shark.funnel_3m` ou `sabia.decrypt`.  
-2. Anexar fonte (CSV funil **real** ou telemetria decrypt).  
-3. Declarar `FailureSpec`.  
-4. Rodar adaptador → `UnitRecord[]`.  
-5. Rodar motor Python → `relatorio.json`.  
-6. Abrir Grafana A + B.  
-7. Trocar cenário = repetir 1–3; caixa e painéis ficam.
-
-Passo a passo visual (sequência Mermaid): [`caixa-fechada-tp.md`](./caixa-fechada-tp.md) §7.
-
----
-
-## 7. Roadmap curto
+## Roadmap
 
 | Etapa | Entrega |
 | --- | --- |
-| **A** | Panel estado OK/Falhou/\(t\)/Censurado + `FailureSpec` no JSON |
-| **A′** | Adaptadores `shark.funnel_3m` (schema+placeholder) e `sabia.decrypt` → `UnitRecord` |
-| **B** | Panel lê `relatorio.json`: β, η, KM, \(P(S>L)\) |
-| **Preditivo** | Job Python; painel mostra \(R(t)\) / risco restante |
+| **A** | Painel de estado: OK, falhou em \(t\), censurado, com o `FailureSpec` no JSON |
+| **A′** | Os dois adaptadores, com schema e sem dados inventados no lugar do arquivo real |
+| **B** | Painel que lê `relatorio.json`: \(\beta\), \(\eta\), Kaplan–Meier, \(P(S>L)\) |
+| **Preditivo** | O job em Python publica \(R(t)\); o painel só avalia a função |
 
-### Fora de escopo deste desenho
-
-- Pipeline Sabia além de decrypt.  
-- WhatsApp Shark neste ciclo.  
-- Inventar CSV do funil.  
-- Treinar LLM / classificador como “confiabilidade”.  
-- Usar \(\tau = 200\,\mathrm{ms}\) como corte da camada Sabia decrypt. Esse valor é o modo lentidão da proposta, no serviço instrumentado.  
-- MLE no browser como linha principal.
-
----
-
-## 8. Resumo operacional
-
-1. **Caixa fechada** com portas `fonte` + `FailureSpec` → `UnitRecord[]` → ①②③ → Grafana.  
-2. **Shark** = funil 3m (schema + placeholder até o CSV).  
-3. **Sabia** = só decrypt.  
-4. **Plugin:** A → A′ → B → preditivo; MLE só em Python.  
-5. Visual completo: [`caixa-fechada-tp.md`](./caixa-fechada-tp.md).
+Ficam fora deste ciclo: inventar o CSV, colocar nome de cliente no arquivo, e calcular a Weibull dentro do navegador.
 
 Referências: [proposta do grupo](./grupo_1_proposal.pdf), [descrição em Markdown](./proposta.md), [caixa fechada](./caixa-fechada-tp.md), [README](../README.md).

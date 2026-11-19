@@ -61,7 +61,7 @@ O tempo é dividido em janelas de \(\Delta = 5\,\mathrm{min}\). Só entram janel
 
 ## 6. Onde isso entra na caixa fechada
 
-O plugin genérico da proposta é o motor descrito em [caixa-fechada-tp.md](./caixa-fechada-tp.md). A caixa recebe uma fonte e um `FailureSpec` e devolve os indicadores. Os cenários em desenvolvimento são o funil Shark (`shark.funnel_3m`) e o decrypt da Sabia (`sabia.decrypt`). Os dois passam pelas mesmas portas. O desenho do contrato está em [plugin-preditivo-confiabilidade.md](./plugin-preditivo-confiabilidade.md).
+O plugin genérico da proposta é o motor descrito em [caixa-fechada-tp.md](./caixa-fechada-tp.md). A caixa recebe uma fonte e um `FailureSpec` e devolve os indicadores. Os adaptadores deste ciclo são o de funil de vendas (`funil.vendas`) e o de requisição HTTPS (`http.request`). Os dois passam pelas mesmas portas. O que inserir, o que acompanhar e a vantagem de cada um estão em [plugin-preditivo-confiabilidade.md](./plugin-preditivo-confiabilidade.md).
 
 ## Declaração de uso de IA
 

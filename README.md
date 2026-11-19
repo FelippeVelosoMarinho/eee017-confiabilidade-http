@@ -21,31 +21,27 @@ O objeto é um sistema web genérico. A falha é a do serviço, vista pelo usuá
 | **I2** | Disponibilidade em relação ao SLO: fração de janelas dentro do objetivo |
 | **I3** | MTBF e MTTR a partir de episódios de janelas consecutivas em falha |
 
-A coleta prevista é de cerca de quinze dias, com tráfego real, condicionada à autorização de cada fonte. Entram código de estado, rota agregada, duração e, quando existirem, medidas de máquina. Identidade e conteúdo clínico ficam de fora. Os exemplos com que o grupo trabalha são duas aplicações clínicas (uma em operação, uma em teste). Se a autorização de uma fonte não se confirmar, outro servidor instrumentado ocupa o lugar.
+A coleta prevista é de cerca de quinze dias, com tráfego real, condicionada à autorização de cada fonte. Entram código de estado, rota agregada, duração e, quando existirem, medidas de máquina. Identidade e conteúdo ficam de fora. Se a autorização de uma fonte não se confirmar, outro servidor instrumentado ocupa o lugar.
 
-## O que a caixa fechada desenvolve
+## O plugin
 
-Um único motor calcula três indicadores. Do lado de fora só mudam a fonte e o critério de falha. Do lado de dentro a matemática permanece.
+O plugin é genérico. A caixa calcula os mesmos índices para qualquer arquivo que um adaptador saiba ler. Neste ciclo há dois adaptadores. Nenhum deles pede nome de pessoa, de conta ou de cliente: o recorte entra como código opaco.
 
-| Indicador | Papel na caixa |
-| --- | --- |
-| **① Taxa × janela** | A taxa da janela contra o limiar do cenário |
-| **② Weibull com censura** | Tempo até a primeira janela ruim; dia observado até o fim sem estouro entra como censura |
-| **③ \(P(S>L)\)** | Carga observada contra a resistência (SLO, percentil ou intervalo) |
+| Adaptador | Você insere | Você acompanha |
+| --- | --- | --- |
+| **Funil de vendas** | Uma linha por etapa da jornada: instante, segmento opaco, etapa (`impressao`, `visita`, `carrinho`, `checkout`, `compra`) e, se quiser retorno, custo e receita | Qual etapa esvazia, se o dia daquele segmento ficou dentro do objetivo, e se o problema é queda de jornada ou retorno |
+| **Requisição HTTPS** | Uma linha por requisição: instante, rota agregada, código HTTP, duração e um id de correlação | \(R_{\mathrm{erro}}\) e \(R_{\mathrm{lat}}\), janelas de 5 min dentro do SLO, e se a indisponibilidade vem de falhar sempre ou de demorar a voltar |
 
-Dois plug-ins de cenário usam o mesmo contrato:
+Os dois mostram, no mesmo Grafana, a confiabilidade por evento, a fração de janelas dentro do objetivo, o MTBF, o MTTR e o estado de cada unidade (ok, falhou no instante \(t\), ou observada até o fim sem estouro). A vantagem é trocar de cenário sem trocar de painel, e ler a falha como quem usa o serviço a lê, com objetivo declarado antes da coleta.
 
-- **Shark** (`shark.funnel_3m`) — funil de três meses. A fonte é o CSV real do funil. Dia sem dado sai da amostra.
-- **Sabia** (`sabia.decrypt`) — somente a etapa de desembrulho / descriptografia. A fonte é a telemetria dessa etapa. A latência dessa camada entra como atraso relativo à própria série (\(d / P50\) móvel). O corte \(\tau = 200\,\mathrm{ms}\) continua sendo o modo lentidão da proposta, no serviço instrumentado.
-
-Trocar de cenário é trocar adaptador, fonte e `FailureSpec`. O motor e os painéis ficam.
+O que colocar em cada coluna, o critério de cada adaptador e o que fica de fora estão em [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md). O desenho da caixa está em [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md).
 
 ## Documentos
 
 - [docs/grupo_1_proposal.pdf](docs/grupo_1_proposal.pdf) — proposta do grupo, descrição do TP.
 - [docs/proposta.md](docs/proposta.md) — a mesma descrição em Markdown.
-- [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md) — motor, portas e os dois plug-ins.
-- [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md) — contrato de entrada, saída e Grafana.
+- [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md) — motor, portas e os dois adaptadores.
+- [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md) — o que inserir, o que acompanhar e a vantagem de cada adaptador.
 - [docs/proposal/](docs/proposal/) — fonte LaTeX da proposta.
 - [docs/OrientacoesTrabalhoPratico.pdf](docs/OrientacoesTrabalhoPratico.pdf) — orientações da disciplina (proposta até 06/11/2026, documento final até 25/11/2026, apresentações em 25/11 e 30/11).
 
