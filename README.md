@@ -94,6 +94,7 @@ O que se observa: a que horas a etapa sai do objetivo, se a causa é erro, chave
 - [docs/grupo_1_proposal.pdf](docs/grupo_1_proposal.pdf) — texto entregue na disciplina.
 - [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md) — motor, portas e os dois adaptadores.
 - [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md) — colunas, critérios e leituras do painel.
+- [docs/planner-coleta.md](docs/planner-coleta.md) — o que já dá para analisar e o que ainda precisa ser gravado.
 - [docs/proposal/](docs/proposal/) — fonte LaTeX.
 - [docs/OrientacoesTrabalhoPratico.pdf](docs/OrientacoesTrabalhoPratico.pdf) — orientações da disciplina.
 
