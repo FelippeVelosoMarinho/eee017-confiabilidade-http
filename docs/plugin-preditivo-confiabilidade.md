@@ -1,156 +1,134 @@
-# Plugin de confiabilidade — o que entra, o que você acompanha
+# Plugin — o que inserir e o que acompanhar
 
-Plugin do Grafana para o TP de EEE 017. O motor é uma caixa fechada: a matemática não muda. O que muda é o **adaptador**, isto é, a peça que lê o arquivo do seu cenário e entrega os eventos no mesmo formato.
+O motor é único. O adaptador traduz um tipo de arquivo para o mesmo registro. Identificadores deste ciclo:
 
-Há dois adaptadores neste ciclo:
-
-| Adaptador | Para quem serve | Identificador |
-| --- | --- | --- |
-| **Funil de vendas** | Quem acompanha uma jornada de várias etapas, do anúncio ou da visita até a compra | `funil.vendas` |
-| **Requisição HTTPS** | Quem acompanha um serviço web: código de resposta, rota e duração | `http.request` |
-
-Os dois alimentam os mesmos painéis. Trocar de adaptador é trocar o arquivo e o critério de falha. O desenho da caixa está em [`caixa-fechada-tp.md`](./caixa-fechada-tp.md). A descrição do trabalho está na [proposta do grupo](./grupo_1_proposal.pdf).
-
-Nenhum arquivo deve trazer nome de pessoa, de conta, de cliente ou de produto. Identificadores são códigos opacos que você escolhe.
-
----
-
-## Para que serve
-
-Um percentual solto de erro não diz se o serviço está piorando, se a queda está numa etapa só, nem se o problema é falhar toda hora ou demorar para voltar. O plugin transforma o arquivo que você anexa em quatro leituras estáveis:
-
-| Leitura | O que responde |
+| Adaptador | Identificador |
 | --- | --- |
-| **Confiabilidade por evento** \(R = 1 - f/n\) | De cada evento, qual fração foi atendida como o esperado |
-| **Disponibilidade** | Qual fração das janelas ficou dentro do objetivo que você declarou |
-| **MTBF e MTTR** | O serviço perde o objetivo porque falha com frequência, ou porque demora a se recuperar |
-| **Tempo até a primeira janela ruim** | Em quanto tempo uma unidade (um dia, um segmento) cruza o limite, com os períodos saudáveis preservados como censura |
+| Funil de vendas | `funil.vendas` |
+| Requisição HTTPS de descriptografia | `http.descriptografia` |
 
-Em cima disso a caixa ainda ajusta uma Weibull e estima \(P(S>L)\): a chance de a tolerância (o objetivo, ou a faixa histórica) ainda cobrir a carga observada. O ajuste roda fora do navegador. O painel mostra o resultado.
+A explicação de janela, objetivo, censura, MTBF e MTTR está no [README](../README.md). O desenho da caixa está em [`caixa-fechada-tp.md`](./caixa-fechada-tp.md).
 
-**Vantagem comum aos dois adaptadores.** O mesmo painel serve para um funil e para um serviço HTTPS. Você declara o objetivo antes de olhar a série, compara janelas com volume suficiente e vê o estado de cada unidade: dentro do objetivo, falhou no instante \(t\), ou foi observada até o fim sem cruzar o limite. Um intervalo sem dado sai da amostra. Ele não vira um dia “perfeito” nem uma falha inventada no fim.
+Códigos de segmento, de sessão e de chave são opacos. O arquivo não leva nome de pessoa, de conta, de cliente ou de produto, nem segredo.
 
 ---
 
-## Adaptador de funil de vendas
+## Funil de vendas (`funil.vendas`)
 
-Use quando a pergunta for comercial: em que etapa as pessoas saem, e se um dia ou um segmento está pior do que o habitual daquele funil.
+Serve para uma jornada de várias etapas, observada por cerca de três meses.
 
-### O que você insere
+### O que inserir
 
-Um CSV, uma linha por evento da jornada. Caminho previsto: `data/funil/eventos.csv`. Enquanto o arquivo real não estiver anexado, o repositório guarda só este contrato.
+Caminho: `data/funil/eventos.csv`. Uma linha por passo.
 
 | Coluna | Tipo | Obrigatória | O que colocar |
 | --- | --- | --- | --- |
-| `timestamp` | ISO-8601 | sim | Instante do evento |
-| `segmento_id` | string | sim | Código opaco do recorte (conta, praça, campanha). Sem nome |
-| `etapa` | enum | sim | `impressao`, `visita`, `carrinho`, `checkout` ou `compra`. Se a sua jornada usa outros nomes, mapeie para estes cinco antes de anexar |
+| `timestamp` | ISO-8601 | sim | Instante do passo |
+| `segmento_id` | string | sim | Código opaco do recorte. Sem nome |
+| `etapa` | enum | sim | `impressao`, `visita`, `carrinho`, `checkout` ou `compra` |
 | `evento_id` | string | sim | Identificador único da linha |
 | `sessao_id` | string | recomendado | Amarra os passos da mesma jornada. Também opaco |
-| `custo` | number | só se quiser ROI | Custo atribuído ao evento |
-| `receita` | number | só se quiser ROI | Receita da conversão. Zero se não houve compra |
+| `custo` | number | só para retorno | Custo atribuído |
+| `receita` | number | só para retorno | Receita. Zero se não houve compra |
 
-Janela padrão: **1 dia**. Unidade que o painel acompanha: **dia × segmento**. Horizonte típico do arquivo: cerca de três meses, o que o CSV realmente cobrir. Um dia sem eventos naquele segmento fica de fora. Um dia com tráfego que não cruza o limite entra como censura.
+Janela: **1 dia**. Unidade: **dia × segmento**. Dia sem evento naquele segmento fica de fora.
 
-### Critério de falha que você declara
+### Quando a unidade estoura
 
-Escolha um, ou os dois:
+- A passagem de uma etapa para a seguinte fica pior que o percentil móvel daquela etapa (partida: P80), ou
+- se `custo` e `receita` existem, o retorno do dia fica abaixo do objetivo ou do P20 da própria série.
 
-- **Queda de etapa.** A passagem de uma etapa para a seguinte fica pior do que o percentil móvel daquela mesma etapa (ponto de partida: P80).
-- **Retorno.** Se você preencheu `custo` e `receita`, o ROI do dia fica abaixo do objetivo declarado ou do percentil móvel baixo da própria série (ponto de partida: P20).
+### O que acompanhar
 
-### O que você passa a acompanhar
+No quadro de três meses, cada linha é um segmento e cada coluna é um dia:
 
-- A etapa em que o funil esvazia, dia a dia, por segmento.
-- Se o dia daquele segmento está saudável, falhou e em que momento, ou chegou ao fim sem estouro.
-- Confiabilidade da jornada, fração de dias dentro do objetivo, tempo médio entre dias ruins e duração média do episódio ruim.
-- Quando houver custo e receita, a mesma leitura para o retorno, ao lado da queda de etapa.
+- verde, ok;
+- vermelho, falhou, com o instante do primeiro estouro e a etapa;
+- cinza, fim sem estouro;
+- em branco, sem tráfego, fora da amostra.
+
+Ao lado: confiabilidade da jornada \(R = 1 - f/n\), fração de dias dentro do objetivo, MTBF e MTTR dos episódios de dias ruins.
 
 ### Vantagem
 
-A queda deixa de ser uma impressão sobre o mês inteiro. Você vê qual etapa cedeu, se o problema se repete no mesmo segmento e se os dias bons ainda sustentam a curva. Dois segmentos entram no mesmo painel porque o identificador é um código, não um nome.
+A conversão do trimestre vira um mapa. Dá para ver a etapa, o segmento e se os dias ruins são frequentes ou longos, sem publicar quem é a conta.
 
 ---
 
-## Adaptador de requisição HTTPS
+## Descriptografia HTTPS (`http.descriptografia`)
 
-Use quando a pergunta for a do serviço: a requisição chegou, com que código, por qual rota e em quanto tempo. Vale para qualquer servidor que exporte essas três medidas. O banco, quando não é medido direto, aparece pelo efeito na API (códigos e duração).
+Serve para a etapa que abre o dado. O pedido pode chegar assim:
 
-### O que você insere
+```text
+front → API → [descriptografia] → banco, modelo, gravação, interface
+```
 
-Um CSV ou JSONL, uma linha por requisição. Caminho previsto: `data/http/requisicoes.csv`.
+A linha do arquivo é a operação entre colchetes. Pedir a chave por HTTPS e abrir o envelope no processo contam como essa operação. O restante da requisição da API não entra.
+
+### O que inserir
+
+Caminho: `data/http/descriptografia.csv` (ou JSONL). Uma linha por operação. Horizonte útil: cerca de quinze dias.
 
 | Coluna | Tipo | Obrigatória | O que colocar |
 | --- | --- | --- | --- |
-| `timestamp` | ISO-8601 | sim | Instante em que a requisição terminou |
-| `rota` | string | sim | Rota agregada. `/pedidos/123` vira `/pedidos/{id}`. Sem identificador no caminho |
-| `status` | number | sim | Código HTTP |
-| `duracao_ms` | number | sim | Duração da requisição |
-| `request_id` | string | sim | Correlação. Sem corpo, sem cabeçalho, sem credencial |
-| `componente` | string | não | Papel no fluxo: `front`, `api` ou `banco` |
+| `timestamp` | ISO-8601 | sim | Fim da operação |
+| `rota` | string | sim | Rota agregada, sem identificador no caminho |
+| `status` | enum | sim | `ok`, `fail`, `key_mismatch` ou `timeout` |
+| `duracao_ms` | number | sim | Duração da operação |
+| `chave_id` | string | sim | Id lógico da chave. Sem material secreto |
+| `request_id` | string | sim | Correlação. Sem corpo e sem cabeçalho |
 
-Janela padrão: **5 minutos**. Só entra janela com **pelo menos 100 requisições**, para uma falha isolada não derrubar o índice. Unidade que o painel acompanha: **dia de serviço**. Um dia sem tráfego fica de fora. Um dia observado até o fim sem janela ruim entra como censura, em 1440 minutos.
+Janela: **5 a 15 minutos**. Só entra janela com volume mínimo (partida: 100 operações). Unidade: **dia de serviço**. Dia sem operação fica de fora. Dia observado até o fim sem janela ruim censura em 1440 minutos.
 
-### Critério de falha que você declara antes da coleta
+### Quando a unidade estoura
 
-Dois modos, os mesmos da proposta:
+A janela sai do objetivo se a taxa de `fail`, `key_mismatch` ou `timeout` passa do limite, ou se a duração fica lenta demais para a própria etapa.
 
-- **Erro.** A requisição recebe 5xx, ou o código com que aquele serviço sinaliza falha percebida. Conta o excesso sobre a taxa típica da rota, porque parte dos 4xx é uso normal. Objetivo de partida: \(R^{*}_{\mathrm{erro}} = 99\%\).
-- **Lentidão.** A duração passa de \(\tau = 200\,\mathrm{ms}\). Objetivo de partida: \(R^{*}_{\mathrm{lat}} = 95\%\).
+Ponto de partida, declarado antes da coleta: \(R^{*}_{\mathrm{erro}} = 99\%\) e, no modo lentidão, \(R^{*}_{\mathrm{lat}} = 95\%\) abaixo de \(\tau = 200\,\mathrm{ms}\). Se a história ainda é curta, o limite pode ser um percentil móvel da própria série, em vez do corte fixo. Conta o excesso sobre a taxa típica da rota quando parte dos códigos é uso normal.
 
-Uma janela falha quando \(R_{\mathrm{erro}}\) ou \(R_{\mathrm{lat}}\) daquela janela fica abaixo do objetivo. Se a série ainda é curta para um objetivo fixo, o `FailureSpec` aceita percentil móvel da própria rota. O corte de 200 ms é o objetivo do serviço, declarado antes de olhar os dados. Ele não é um limite copiado de outra camada.
+### O que acompanhar
 
-### O que você passa a acompanhar
-
-- \(R_{\mathrm{erro}}\) e \(R_{\mathrm{lat}}\), no período, por janela e por componente.
-- Os percentis 95 e 99 da duração, ao lado da fração de requisições lentas.
-- A fração de janelas de 5 minutos dentro do objetivo.
-- Episódios de janelas ruins seguidas: de quanto em quanto tempo começam (MTBF) e quanto duram (MTTR).
-- O estado do dia: dentro do objetivo, primeira janela ruim no minuto \(t\), ou censurado.
+- A hora da primeira janela ruim do dia, e a causa (`erro`, `chave`, `timeout` ou `lentidao`).
+- A fração de janelas de 5–15 min dentro do objetivo.
+- MTBF e MTTR dos episódios de janelas ruins seguidas.
+- Dias cinza, que passaram sem estouro, e dias em branco, que não tiveram operação.
 
 ### Vantagem
 
-A leitura fica a da pessoa que usa o serviço, não a de um componente isolado. Rota agregada e código opaco permitem juntar vários serviços no mesmo plugin sem publicar quem acessou o quê. O mínimo de 100 requisições e o excesso sobre a taxa típica separam uma lentidão real de um punhado de acessos ou de um código que já é comum naquela rota.
+A média de erros do mês esconde um episódio curto no meio de um dia bom. Aqui o dia fica marcado no primeiro estouro, a volta ao objetivo tem duração, e a abertura do dado não se mistura com o tempo do modelo nem com a tela.
 
 ---
 
 ## O que os dois mostram no Grafana
 
-| Painel | Você vê | Você não precisa calcular |
-| --- | --- | --- |
-| **A — estado** | Série da janela, objetivo, e cada unidade como OK, falhou em \(t\) ou censurada | A comparação da taxa com o limite |
-| **B — sobrevivência** | \(\beta\), \(\eta\), curva de Kaplan–Meier, \(P(S>L)\) e a tabela da amostra | O ajuste da Weibull e o Monte Carlo |
+| Painel | Leitura |
+| --- | --- |
+| **A — quadro** | Cada unidade: ok, falhou em \(t\), fim sem estouro. A série da janela ao lado do limite |
+| **B — curva** | Weibull (\(\beta\), \(\eta\)), Kaplan–Meier, \(P(S>L)\). O ajuste já veio pronto no `relatorio.json` |
 
-Quando o modelo já está ajustado, o painel também mostra a confiabilidade residual \(R(t)=\exp[-(t/\eta)^{\beta}]\).
+Quando o modelo existe, o painel também mostra a chance de a unidade ainda não ter estourado até o instante \(t\): \(R(t)=\exp[-(t/\eta)^{\beta}]\).
 
 ---
 
-## Contrato que o adaptador entrega à caixa
+## Registro que o adaptador entrega
 
 ```text
-ReliabilityInput = {
-  fonte,            // CSV ou JSONL do adaptador escolhido
-  definicao_falha,  // FailureSpec: janela, predicado, limiar, elegibilidade
-  unidade_amostral, // funil: dia × segmento | https: dia de serviço
-  request_evento    // funil: 1 evento de etapa | https: 1 requisição
-}
-
 UnitRecord = {
-  unit_id,     // 2026-08-06×segmento | 2026-08-06
-  t_min,       // tempo até a falha ou até a censura
-  censored,    // true se a unidade terminou sem cruzar o limite
+  unit_id,     // funil: 2026-08-06×segmento | descriptografia: 2026-08-06
+  t_min,       // minuto do primeiro estouro, ou do fim observado
+  censored,    // true no fim sem estouro
   cause?,      // funil: drop_etapa | roi_baixo
-               // https: erro | lentidao | timeout
+               // descriptografia: erro | key_mismatch | timeout | lentidao
   windows[],
-  meta         // { dominio: "funil.vendas" | "http.request" }
+  meta         // { dominio: "funil.vendas" | "http.descriptografia" }
 }
 ```
 
 ```json
 {
-  "dominio": "funil.vendas | http.request",
+  "dominio": "funil.vendas | http.descriptografia",
   "failure_spec": {
-    "window": "1d | 5m",
+    "window": "1d | 5m | 15m",
     "predicate": "drop > threshold OR roi < threshold OR error_rate > threshold OR latency > tau",
     "threshold_mode": "fixed_slo | rolling_p95 | rolling_p80 | rolling_p20",
     "threshold_value": null,
@@ -164,44 +142,43 @@ O motor grava `relatorio.json` com `escolha`, `weibull`, `kaplan_meier`, `carga_
 | Símbolo | Significado |
 | --- | --- |
 | janela | Intervalo sem sobreposição |
-| \(L\) | Carga observada na janela (queda, \(1/\mathrm{ROI}\), taxa de erro ou duração) |
-| \(S\) | Resistência: objetivo declarado, percentil ou intervalo |
-| \(t\) | Tempo até a primeira janela ruim, ou até o fim observado |
-| censura | A unidade foi observada até o fim e não cruzou o limite |
+| dentro do objetivo | A carga da janela não cruzou o limite |
+| \(t\) | Minuto do primeiro estouro, ou do fim observado |
+| censura | Fim sem estouro. A unidade foi vista até o fim |
+| exclusão | Sem evento. A unidade não entra na amostra |
+| MTBF | Tempo médio dentro do objetivo entre episódios |
+| MTTR | Duração média do episódio, até a janela voltar ao objetivo |
 
-Ordem do estudo: primeiro o critério de falha, depois a amostra, depois o ajuste. Para a Weibull separar forma e escala, a fração de unidades que falham fica tipicamente entre 20% e 80%. Com pouca história, o relatório registra a limitação.
+Ordem: critério de falha, depois amostra, depois ajuste. Para a Weibull separar forma e escala, a fração de unidades que falham fica tipicamente entre 20% e 80%. Com pouca história, o relatório registra a limitação em vez de fingir precisão.
 
-| Adaptador | Limiar de partida | Janela |
+| Adaptador | Limite de partida | Janela |
 | --- | --- | --- |
-| Funil — queda de etapa | P80 móvel daquela etapa | 1 dia |
-| Funil — retorno | P20 móvel do ROI, ou o objetivo declarado | 1 dia |
-| HTTPS — erro | \(R^{*}_{\mathrm{erro}} = 99\%\), excesso sobre a taxa típica da rota | 5 min, com pelo menos 100 requisições |
-| HTTPS — lentidão | \(R^{*}_{\mathrm{lat}} = 95\%\) abaixo de \(\tau = 200\,\mathrm{ms}\) | 5 min, com pelo menos 100 requisições |
+| Funil — queda de etapa | P80 móvel da etapa | 1 dia |
+| Funil — retorno | P20 móvel do retorno, ou o objetivo declarado | 1 dia |
+| Descriptografia — erro | \(R^{*}_{\mathrm{erro}} = 99\%\) | 5 a 15 min, com volume mínimo |
+| Descriptografia — lentidão | \(R^{*}_{\mathrm{lat}} = 95\%\) abaixo de 200 ms, ou percentil móvel da etapa | 5 a 15 min, com volume mínimo |
 
 ---
 
 ## Como ligar
 
-1. Escolha o adaptador: `funil.vendas` ou `http.request`.
-2. Anexe o arquivo no caminho daquele adaptador, só com as colunas da tabela.
-3. Declare o `FailureSpec` (janela, predicado, modo do limiar, mínimo de eventos).
-4. Rode o adaptador. Ele emite `UnitRecord[]`.
-5. Rode o motor. Ele emite `relatorio.json`.
-6. Abra os painéis A e B.
+1. Escolher `funil.vendas` ou `http.descriptografia`.
+2. Anexar o arquivo no caminho daquele adaptador.
+3. Declarar o `FailureSpec`.
+4. Rodar o adaptador e o motor.
+5. Abrir os painéis A e B.
 
-Um arquivo de demonstração, se existir, fica marcado como fictício e separado do CSV real.
-
----
+Um arquivo de demonstração, se existir, fica marcado como fictício e separado do arquivo real.
 
 ## Roadmap
 
 | Etapa | Entrega |
 | --- | --- |
-| **A** | Painel de estado: OK, falhou em \(t\), censurado, com o `FailureSpec` no JSON |
-| **A′** | Os dois adaptadores, com schema e sem dados inventados no lugar do arquivo real |
-| **B** | Painel que lê `relatorio.json`: \(\beta\), \(\eta\), Kaplan–Meier, \(P(S>L)\) |
-| **Preditivo** | O job em Python publica \(R(t)\); o painel só avalia a função |
+| **A** | Quadro de unidades: ok, falhou em \(t\), fim sem estouro |
+| **A′** | Os dois adaptadores, com este contrato e sem dado inventado no lugar do arquivo real |
+| **B** | Painel da curva a partir do `relatorio.json` |
+| **Preditivo** | \(R(t)\) calculado fora do navegador |
 
-Ficam fora deste ciclo: inventar o CSV, colocar nome de cliente no arquivo, e calcular a Weibull dentro do navegador.
+Ficam fora: nome de cliente no arquivo, inventar o CSV, e misturar o resto da API na etapa de descriptografia.
 
-Referências: [proposta do grupo](./grupo_1_proposal.pdf), [descrição em Markdown](./proposta.md), [caixa fechada](./caixa-fechada-tp.md), [README](../README.md).
+Referências: [proposta](./proposta.md), [caixa fechada](./caixa-fechada-tp.md), [README](../README.md).

@@ -16,16 +16,14 @@ A prática voltada à confiabilidade de sistemas web é o SRE. No Brasil ela é 
 
 ## 2. Descrição do sistema
 
-A proposta mede uma requisição que parte do front-end, atravessa uma ou mais APIs e chega a consultas de banco. Vários serviços participam do mesmo fluxo. HTTP, banco, CPU e memória seguem a especificação do OpenTelemetry: um servidor instrumentado entrega esses dados no mesmo formato, qualquer que seja a finalidade.
+A proposta mede uma requisição que parte do front-end, atravessa uma ou mais APIs e chega a consultas de banco. Vários serviços participam do mesmo fluxo. HTTP, banco, CPU e memória seguem o OpenTelemetry: um servidor instrumentado entrega esses dados no mesmo formato, qualquer que seja a finalidade.
 
-Os exemplos com que o grupo já trabalha são dois, e os dois são clínicos.
+O plugin explora essa medida com dois adaptadores, sem nome de produto nem de cliente.
 
-- O primeiro, já em operação no atendimento clínico, tem a rota de prontuário entre os caminhos. Quando o banco deixa de responder, as sessões são encerradas por segurança e as respostas HTTP 401 sobem. O banco não é medido diretamente. Parte desses 401 é autenticação normal. No modo de tempo, a resposta percebida como rápida fica abaixo de 200 ms.
-- O segundo é uma aplicação web em teste por psicólogos, também com front-end, API e banco, no apoio ao registro da sessão clínica.
+- **Funil de vendas.** Cerca de três meses. Cada linha é uma etapa da jornada.
+- **Requisição HTTPS de descriptografia.** Só a operação que abre o dado. Consulta de chave, modelo, gravação e interface ficam de fora. Quando o banco deixa de responder, a falha aparece no código com que o serviço encerra a chamada; parte desse código é uso normal e entra só o excesso. No modo de tempo, a resposta percebida como rápida fica abaixo de 200 ms.
 
-O estudo não se apoia num único exemplo. Nos dois há dado clínico, e nos dois a liberação desse dado ainda depende de autorização, inclusive de quais campos entrariam. Se nenhuma autorização se confirmar, outro servidor instrumentado ocupa o lugar, com o código de erro que representar a falha percebida nele.
-
-Os dados liberados chegam mascarados. Entram código de estado, rota agregada, duração e, quando existirem, as medidas de máquina. Identidade e conteúdo clínico ficam de fora. A coleta prevista é de cerca de quinze dias.
+Se a autorização de uma fonte não se confirmar, outro servidor instrumentado ocupa o lugar. Os dados liberados chegam mascarados: código de estado, rota agregada, duração e, quando existirem, medidas de máquina. Identidade e conteúdo ficam de fora. A coleta do serviço é de cerca de quinze dias. O funil usa os cerca de três meses que o arquivo cobrir.
 
 ## 3. Revisão de literatura
 
@@ -61,7 +59,7 @@ O tempo é dividido em janelas de \(\Delta = 5\,\mathrm{min}\). Só entram janel
 
 ## 6. Onde isso entra na caixa fechada
 
-O plugin genérico da proposta é o motor descrito em [caixa-fechada-tp.md](./caixa-fechada-tp.md). A caixa recebe uma fonte e um `FailureSpec` e devolve os indicadores. Os adaptadores deste ciclo são o de funil de vendas (`funil.vendas`) e o de requisição HTTPS (`http.request`). Os dois passam pelas mesmas portas. O que inserir, o que acompanhar e a vantagem de cada um estão em [plugin-preditivo-confiabilidade.md](./plugin-preditivo-confiabilidade.md).
+O plugin genérico da proposta é o motor descrito em [caixa-fechada-tp.md](./caixa-fechada-tp.md). A caixa recebe uma fonte e um `FailureSpec` e devolve os indicadores. Os adaptadores deste ciclo são o de funil de vendas (`funil.vendas`) e o de requisição HTTPS de descriptografia (`http.descriptografia`). Os dois passam pelas mesmas portas. O que inserir, o que acompanhar e a vantagem de cada um estão em [plugin-preditivo-confiabilidade.md](./plugin-preditivo-confiabilidade.md).
 
 ## Declaração de uso de IA
 
