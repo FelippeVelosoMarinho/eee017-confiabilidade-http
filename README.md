@@ -8,12 +8,20 @@ Felippe Veloso Marinho, Josoe Santos Queiroz, Maria Eduarda Sampaio, Matheus Amo
 
 O plugin é um motor só de confiabilidade, com painel no Grafana. Ele não é universal no sentido de engolir qualquer arquivo cru. Cada tipo de dado precisa de um **adaptador**: uma peça que traduz as linhas daquele arquivo para o mesmo registro interno. A matemática, os painéis e as perguntas ficam iguais. Mudam a fonte e o que conta como falha.
 
-Neste ciclo a ideia é explorada com dois adaptadores:
+O que roda agora, para a apresentação, são dois adaptadores no mesmo motor (`python3 analisar.py`):
 
 | Adaptador | Identificador | O arquivo |
 | --- | --- | --- |
-| Funil de vendas | `funil.vendas` | Cerca de três meses de etapas da jornada |
-| Requisição HTTPS de descriptografia | `http.descriptografia` | Só a operação que abre o dado, não o resto do serviço |
+| Funil de vendas | `funil.vendas` | CSV diário de cerca de três meses, passado por `--funil`. Não entra no Git |
+| Nicolas Cage × aviação | `cage.aviacao` | Filmografia pública e acidentes aéreos catalogados no Wikidata, em `data/cage/` |
+
+A descriptografia (`http.descriptografia`) continua no contrato, mas não há linha por operação no log atual. Ela não entra nesta rodada.
+
+```bash
+python3 analisar.py --funil "/caminho/do-funil-diario.csv"
+```
+
+O funil usa o dia como janela e a semana como unidade. O retorno do dia estoura quando fica abaixo do P20 dos dias anteriores. O Cage usa o mês como janela e o ano como unidade. O ano estoura no primeiro mês em que estreia um filme e a contagem de acidentes passa da média dos meses anteriores. Os dois gravam o mesmo tipo de relatório em `output/`.
 
 Nenhum dos dois pede nome de pessoa, de conta, de cliente ou de produto. O recorte entra como código opaco.
 

@@ -52,4 +52,4 @@ Registrar daqui até terça ou quarta, no formato do adaptador, uma linha por op
 
 Cinco ou seis dias são poucos para a Weibull separar forma e escala. O relatório diz isso. A fração de janelas dentro do objetivo, o primeiro estouro do dia, o MTBF e o MTTR ainda saem dessa amostra curta. Inventar dias para completar quinze não entra.
 
-Se a versão instrumentada não subir a tempo, o funil é o cenário com dado. A descriptografia fica como contrato e como limitação: a coleta não chegou a existir. Não se preenche o gráfico com log bruto de outra camada.
+Se a versão instrumentada não subir a tempo, o funil é um dos cenários com dado. O outro, para mostrar que o motor não muda, é `cage.aviacao`: mês como janela, ano como unidade, fontes públicas em `data/cage/`. A descriptografia fica como contrato. Não se preenche o gráfico dela com log bruto de outra camada.

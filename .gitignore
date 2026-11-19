@@ -2,6 +2,7 @@ logs/*.log
 __pycache__/
 .venv/
 .DS_Store
+output/
 
 # Artefatos de build do LaTeX da proposta
 docs/proposal/*.aux
