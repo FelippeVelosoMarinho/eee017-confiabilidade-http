@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Reliability-App",
+  "id": "ufmg-reliability-app",
+  "info": {
+    "keywords": ["app", "reliability", "sre", "opentelemetry"],
+    "description": "Confiabilidade HTTP (OpenTelemetry) — EEE017 UFMG",
+    "author": {
+      "name": "UFMG EEE017"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Visão geral",
+      "path": "/a/%PLUGIN_ID%/overview",
+      "addToNav": true,
+      "defaultNav": true
+    },
+    {
+      "type": "page",
+      "icon": "cog",
+      "name": "Configuração",
+      "path": "/plugins/%PLUGIN_ID%",
+      "role": "Admin",
+      "addToNav": true
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=13.2.0",
+    "plugins": []
+  }
+}

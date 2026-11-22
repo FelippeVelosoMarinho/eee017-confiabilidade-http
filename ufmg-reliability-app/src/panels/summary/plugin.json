@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "panel",
+  "name": "Reliability Summary (A, MTBF, MTTR)",
+  "id": "ufmg-reliability-summary-panel",
+  "info": {
+    "description": "Disponibilidade A, MTBF e MTTR calculados a partir de R_erro e R_lat por janela.",
+    "author": { "name": "UFMG EEE017" },
+    "keywords": ["reliability", "sre", "slo", "mtbf", "mttr"],
+    "logos": { "small": "../../img/logo.svg", "large": "../../img/logo.svg" },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=13.2.0"
+  }
+}

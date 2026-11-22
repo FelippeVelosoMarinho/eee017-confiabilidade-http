@@ -1,0 +1,269 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "row",
+      "id": 100,
+      "title": "Visão geral",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "type": "ufmg-reliability-summary-panel",
+      "id": 1,
+      "title": "Disponibilidade, MTBF e MTTR",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 1 },
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 1,
+        "windowSeconds": 7200
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window]))",
+          "legendFormat": "total",
+          "editorMode": "code",
+          "range": true
+        },
+        {
+          "refId": "B",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",http_response_status_code=~\"5..\"}[$window]))",
+          "legendFormat": "errors",
+          "editorMode": "code",
+          "range": true
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (le) (increase(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window]))",
+          "legendFormat": "le={{le}}",
+          "editorMode": "code",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 101,
+      "title": "Painel A — Quadro de janelas",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "panels": []
+    },
+    {
+      "type": "ufmg-reliability-window-grid-panel",
+      "id": 2,
+      "title": "Janelas por servidor (verde = ok, vermelho = falhou, cinza = censurada)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "minRequests": 1,
+        "rowLabel": "server_address"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (server_address) (increase(http_server_request_duration_seconds_count{http_route=~\"$http_route\"}[$window]))",
+          "legendFormat": "{{server_address}} total",
+          "editorMode": "code",
+          "range": true
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (server_address) (increase(http_server_request_duration_seconds_count{http_route=~\"$http_route\",http_response_status_code=~\"5..\"}[$window]))",
+          "legendFormat": "{{server_address}} errors",
+          "editorMode": "code",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 102,
+      "title": "R_erro(t) e R_lat(t)",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 3,
+      "title": "R_erro(t) = 1 - 5xx / total",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1.001,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 0.99 }
+            ]
+          },
+          "custom": { "thresholdsStyle": { "mode": "line" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - (sum(increase(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",http_response_status_code=~\"5..\"}[$window])) / clamp_min(sum(increase(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window])), 1))",
+          "legendFormat": "R_erro",
+          "editorMode": "code",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 4,
+      "title": "R_lat(t) ≈ fração ≤ 250ms (bucket mais próximo de τ=200ms)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1.001,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 0.95 }
+            ]
+          },
+          "custom": { "thresholdsStyle": { "mode": "line" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\",le=\"0.25\"}[$window])) / clamp_min(sum(increase(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window])), 1)",
+          "legendFormat": "R_lat (le=0.25)",
+          "editorMode": "code",
+          "range": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 103,
+      "title": "Latência",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 5,
+      "title": "p95 e p99 por server_address",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, server_address) (rate(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window])))",
+          "legendFormat": "p95 {{server_address}}",
+          "editorMode": "code",
+          "range": true
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.99, sum by (le, server_address) (rate(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"}[$window])))",
+          "legendFormat": "p99 {{server_address}}",
+          "editorMode": "code",
+          "range": true
+        }
+      ]
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": ["reliability", "sre", "ufmg", "eee017"],
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "type": "datasource",
+        "label": "Datasource",
+        "query": "prometheus",
+        "current": { "selected": true, "text": "Prometheus", "value": "webstore-metrics" },
+        "hide": 0,
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "label": "Janela",
+        "query": "5m,15m,2h,6h,1d",
+        "current": { "selected": true, "text": "2h", "value": "2h" },
+        "options": [
+          { "text": "5m", "value": "5m", "selected": false },
+          { "text": "15m", "value": "15m", "selected": false },
+          { "text": "2h", "value": "2h", "selected": true },
+          { "text": "6h", "value": "6h", "selected": false },
+          { "text": "1d", "value": "1d", "selected": false }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "server_address",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${ds}" },
+        "label": "Server address",
+        "query": "label_values(http_server_request_duration_seconds_count, server_address)",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "http_route",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${ds}" },
+        "label": "Rota",
+        "query": "label_values(http_server_request_duration_seconds_count, http_route)",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": { "from": "2024-01-01T00:00:00.000Z", "to": "2024-02-06T23:59:59.000Z" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Confiabilidade HTTP — EEE017",
+  "uid": "ufmg-reliability",
+  "version": 1,
+  "weekStart": ""
+}

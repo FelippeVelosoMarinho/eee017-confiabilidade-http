@@ -1,0 +1,14 @@
+apiVersion: 1
+
+apps:
+  - type: 'ufmg-reliability-app'
+    org_id: 1
+    org_name: 'ufmg'
+    disabled: false
+    jsonData:
+      datasourceUid: webstore-metrics
+      slo_erro: 0.99
+      slo_lat: 0.95
+      tau_ms: 200
+      window: 1h
+      min_requests: 100
