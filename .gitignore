@@ -13,3 +13,13 @@ docs/proposal/*.fls
 docs/proposal/*.log
 docs/proposal/*.out
 docs/proposal/*.pdf
+
+# Artefatos de build do LaTeX do relatório
+docs/report/*.aux
+docs/report/*.bbl
+docs/report/*.blg
+docs/report/*.fdb_latexmk
+docs/report/*.fls
+docs/report/*.log
+docs/report/*.out
+docs/report/*.pdf

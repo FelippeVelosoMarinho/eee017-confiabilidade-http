@@ -1,0 +1,99 @@
+\documentclass[12pt, a4paper, oneside]{article}
+
+% Codificação e idioma
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+
+% Margens ABNT: superior 3cm, inferior 2cm, esquerda 3cm, direita 2cm
+\usepackage[
+  top=3cm,
+  bottom=2cm,
+  left=3cm,
+  right=2cm
+]{geometry}
+
+% Espaçamento 1,5 entre linhas (ABNT NBR 14724)
+\usepackage{setspace}
+\onehalfspacing
+
+% Fontes e tipografia
+\usepackage{times}
+\usepackage{microtype}
+
+% Recuo de parágrafo ABNT: 1,25cm; primeiro parágrafo também recuado
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+
+% Numeração de página no canto superior direito (ABNT)
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Formatação dos títulos de seção (ABNT: numeração progressiva, sem ponto)
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\fontsize{12}{14}\bfseries\MakeUppercase}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\fontsize{12}{14}\itshape}{\thesubsubsection}{1em}{}
+
+% URLs e hyperlinks
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+}
+
+% Referências ABNT (deve vir após hyperref)
+\usepackage[alf]{abntex2cite}
+
+% Título, autores e data
+\title{\textbf{Confiabilidade de sistemas de software distribuídos a partir de sinais OpenTelemetry}}
+\author{
+  Felippe Veloso Marinho \\
+  Josoe Santos Queiroz \\
+  Maria Eduarda Sampaio \\
+  Matheus Amorim Soares Salles \\
+  Raphael Lucas Silva Amaral
+}
+\date{2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+% Resumo em português (ABNT NBR 6028)
+\begin{center}
+\textbf{RESUMO}
+\end{center}
+\begin{spacing}{1.0}
+\noindent
+
+\vspace{0.5cm}
+\noindent\textbf{Palavras-chave:} palavra1; palavra2; palavra3.
+\end{spacing}
+
+\vspace{1cm}
+
+\section{Introdução}
+
+O termo 
+
+\section{Revisão de Literatura}
+
+\section{Materiais e Métodos}
+
+\section{Resultados}
+
+\section{Conclusão}
+
+\section{Declaração de uso de IA}
+
+\bibliography{references}
+
+\end{document}
