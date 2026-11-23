@@ -32,3 +32,49 @@ describe('computeWindows', () => {
     expect(badSequence(rows)).toEqual([true, false]);
   });
 });
+
+describe('computeWindows no modo p95', () => {
+  const params = { sloErro: 0.99, sloLat: 0.95, minRequests: 100, tauMs: 200 };
+
+  it('p95 acima de tau deixa a janela ruim na latência; abaixo, não', () => {
+    const r = computeWindows(
+      { times: [0, 1], total: [500, 500], errors: [0, 0], latencyFailures: [0, 0], p95Seconds: [0.31, 0.15] },
+      params,
+    );
+    expect(r[0].bad_lat).toBe(true);
+    expect(r[1].bad_lat).toBe(false);
+    expect(Number.isNaN(r[0].r_lat)).toBe(true);
+  });
+
+  it('p95 igual a tau passa (pelo menos 95% até tau)', () => {
+    const r = computeWindows({ times: [0], total: [500], errors: [0], latencyFailures: [0], p95Seconds: [0.2] }, params);
+    expect(r[0].bad_lat).toBe(false);
+  });
+
+  it('sem percentil na janela, não marca falha de latência', () => {
+    const r = computeWindows({ times: [0], total: [500], errors: [0], latencyFailures: [0], p95Seconds: [NaN] }, params);
+    expect(r[0].bad_lat).toBe(false);
+  });
+
+  it('modo p95 sem tauMs é erro de configuração', () => {
+    expect(() =>
+      computeWindows(
+        { times: [0], total: [500], errors: [0], latencyFailures: [0], p95Seconds: [0.1] },
+        { sloErro: 0.99, sloLat: 0.95, minRequests: 100 },
+      ),
+    ).toThrow();
+  });
+});
+
+describe('badSequence por modo de falha', () => {
+  const rows = computeWindows(
+    { times: [0, 1], total: [1000, 1000], errors: [20, 0], latencyFailures: [0, 100] },
+    { sloErro: 0.99, sloLat: 0.95, minRequests: 100 },
+  );
+  it('erro, latência e os dois', () => {
+    expect(badSequence(rows, 'error')).toEqual([true, false]);
+    expect(badSequence(rows, 'latency')).toEqual([false, true]);
+    expect(badSequence(rows, 'both')).toEqual([true, true]);
+    expect(badSequence(rows)).toEqual([true, true]);
+  });
+});

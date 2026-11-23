@@ -1,0 +1,222 @@
+{
+  "parametros": {
+    "SLO_erro": 0.99,
+    "SLO_lat": 0.95,
+    "tau_ms": 200.0,
+    "min_req": 100,
+    "janela_min": 5,
+    "alvo": "PetSite",
+    "bootstrap": "2000 reamostras, blocos de 12 janelas, seed 17"
+  },
+  "por_cenario": [
+    {
+      "cenario": "Tráfego baixo",
+      "inicio_utc": "2023-08-21 09:00:00+00:00",
+      "fim_utc": "2023-08-23 10:05:00+00:00",
+      "janelas": 589,
+      "janelas_abaixo_de_100": 0,
+      "requisicoes": 285225,
+      "erros": 1167,
+      "R_erro": 0.9959084932947673,
+      "R_erro_IC95_wilson": [
+        0.99566745674251,
+        0.9961361720670324
+      ],
+      "R_erro_IC95_bootstrap": [
+        0.9908084302155775,
+        0.9989746758146382
+      ],
+      "R_lat_limite_inf": 0.501673065124025,
+      "R_lat_limite_sup": 0.9002091331405032,
+      "R_lat_estimado": 0.7872311708188164,
+      "p95_mediano_ms": 309.1577190733999,
+      "p99_mediano_ms": 468.73583095780606,
+      "erro": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 567,
+        "A": 0.9626485568760611,
+        "episodios": 13,
+        "MTBF_min": 218.07692307692307,
+        "MTTR_min": 8.461538461538462,
+        "A_pela_identidade": 0.9626485568760611
+      },
+      "lat": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 0,
+        "A": 0.0,
+        "episodios": 1,
+        "MTBF_min": 0.0,
+        "MTTR_min": 2945.0,
+        "A_pela_identidade": 0.0
+      },
+      "ambos": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 0,
+        "A": 0.0,
+        "episodios": 1,
+        "MTBF_min": 0.0,
+        "MTTR_min": 2945.0,
+        "A_pela_identidade": 0.0
+      }
+    },
+    {
+      "cenario": "Tráfego alto",
+      "inicio_utc": "2023-09-05 14:00:00+00:00",
+      "fim_utc": "2023-09-07 15:05:00+00:00",
+      "janelas": 589,
+      "janelas_abaixo_de_100": 0,
+      "requisicoes": 406226,
+      "erros": 364,
+      "R_erro": 0.9991039470639497,
+      "R_erro_IC95_wilson": [
+        0.99900709652665,
+        0.9991913581801914
+      ],
+      "R_erro_IC95_bootstrap": [
+        0.9989103882113072,
+        0.9992856585547475
+      ],
+      "R_lat_limite_inf": 0.5,
+      "R_lat_limite_sup": 0.8999999999999999,
+      "R_lat_estimado": 0.7790382712269595,
+      "p95_mediano_ms": 308.51618060059485,
+      "p99_mediano_ms": 444.9033315495314,
+      "erro": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 582,
+        "A": 0.9881154499151104,
+        "episodios": 6,
+        "MTBF_min": 485.0,
+        "MTTR_min": 5.833333333333334,
+        "A_pela_identidade": 0.9881154499151104
+      },
+      "lat": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 0,
+        "A": 0.0,
+        "episodios": 1,
+        "MTBF_min": 0.0,
+        "MTTR_min": 2945.0,
+        "A_pela_identidade": 0.0
+      },
+      "ambos": {
+        "janelas_julgadas": 589,
+        "janelas_ok": 0,
+        "A": 0.0,
+        "episodios": 1,
+        "MTBF_min": 0.0,
+        "MTTR_min": 2945.0,
+        "A_pela_identidade": 0.0
+      }
+    },
+    {
+      "cenario": "Tráfego variável",
+      "inicio_utc": "2023-04-22 19:55:00+00:00",
+      "fim_utc": "2023-04-28 13:35:00+00:00",
+      "janelas": 1652,
+      "janelas_abaixo_de_100": 0,
+      "requisicoes": 944067,
+      "erros": 1675,
+      "R_erro": 0.9982257615190447,
+      "R_erro_IC95_wilson": [
+        0.9981388181305836,
+        0.9983086503097739
+      ],
+      "R_erro_IC95_bootstrap": [
+        0.9974228559106473,
+        0.9988703087776276
+      ],
+      "R_lat_limite_inf": 0.5001549148524416,
+      "R_lat_limite_sup": 0.9000309829704883,
+      "R_lat_estimado": 0.7939485339493403,
+      "p95_mediano_ms": 308.3607139872654,
+      "p99_mediano_ms": 449.05697313103934,
+      "erro": {
+        "janelas_julgadas": 1652,
+        "janelas_ok": 1624,
+        "A": 0.9830508474576272,
+        "episodios": 25,
+        "MTBF_min": 324.79999999999995,
+        "MTTR_min": 5.6000000000000005,
+        "A_pela_identidade": 0.983050847457627
+      },
+      "lat": {
+        "janelas_julgadas": 1652,
+        "janelas_ok": 1,
+        "A": 0.0006053268765133172,
+        "episodios": 2,
+        "MTBF_min": 2.5,
+        "MTTR_min": 4127.5,
+        "A_pela_identidade": 0.0006053268765133172
+      },
+      "ambos": {
+        "janelas_julgadas": 1652,
+        "janelas_ok": 1,
+        "A": 0.0006053268765133172,
+        "episodios": 2,
+        "MTBF_min": 2.5,
+        "MTTR_min": 4127.5,
+        "A_pela_identidade": 0.0006053268765133172
+      }
+    }
+  ],
+  "testes_qui2": {
+    "entre_cenarios": {
+      "qui2": 914.0735917062009,
+      "gl": 2,
+      "p": 3.246695314497724e-199,
+      "taxas_erro": {
+        "Tráfego baixo": 0.004091506705232711,
+        "Tráfego alto": 0.0008960529360503759,
+        "Tráfego variável": 0.001774238480955271
+      }
+    },
+    "entre_janelas_low_traffic": {
+      "qui2": 103570.86112519423,
+      "gl": 588,
+      "p": 0.0,
+      "indice_dispersao": 432.83424390984004,
+      "obs": "esperados pequenos: p é aproximado; ver índice de dispersão"
+    },
+    "entre_janelas_high_traffic": {
+      "qui2": 2319.7774771358527,
+      "gl": 588,
+      "p": 1.2314415998060514e-203,
+      "indice_dispersao": 3.974724754337062,
+      "obs": "esperados pequenos: p é aproximado; ver índice de dispersão"
+    },
+    "entre_janelas_temporal_traffic1": {
+      "qui2": 66250.31964570182,
+      "gl": 1651,
+      "p": 0.0,
+      "indice_dispersao": 60.62220717653703,
+      "obs": "esperados pequenos: p é aproximado; ver índice de dispersão"
+    },
+    "entre_componentes": {
+      "qui2": 20523.954826225217,
+      "gl": 18,
+      "p": 0.0,
+      "componentes": 19,
+      "criterio": "componentes com alguma janela de >= 100 requisições",
+      "sem_PetSite": {
+        "qui2": 840.7245154862094,
+        "gl": 17,
+        "p": 9.479258641293684e-168
+      },
+      "erros_PetSite": 3206,
+      "erros_demais": 317
+    }
+  },
+  "ajuste_tempo_entre_falhas": {
+    "n": 46,
+    "censuradas": 5,
+    "exp_lambda_por_h": 0.17742901880688525,
+    "exp_media_h": 5.636056642394025,
+    "exp_AIC": 561.5311731096168,
+    "weibull_k": 0.8092210582948182,
+    "weibull_escala_h": 5.212029053820743,
+    "weibull_AIC": 560.3150446158764,
+    "razao_verossimilhanca": 3.2161284937403707,
+    "p_valor_k_igual_1": 0.07291589579690338
+  }
+}

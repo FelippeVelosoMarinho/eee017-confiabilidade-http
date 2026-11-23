@@ -1,0 +1,770 @@
+{
+  "uid": "petshop-confiabilidade",
+  "title": "Confiabilidade — PetShop (caso secundário)",
+  "editable": true,
+  "timezone": "utc",
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "tags": [
+    "reliability",
+    "petshop",
+    "eee017"
+  ],
+  "time": {
+    "from": "2023-08-21T08:55:00.000Z",
+    "to": "2023-08-23T10:05:00.000Z"
+  },
+  "description": "Troque de cenário pelos links no topo: cada cenário está numa data diferente de 2023 e o link ajusta o período. Dados do PetShop Dataset (Hardt et al., 2024; CC-BY-4.0), mapeados para OpenTelemetry por petshop/conversor.",
+  "links": [
+    {
+      "title": "Cenário: tráfego baixo (21–23/08/2023)",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": false,
+      "url": "/d/petshop-confiabilidade/petshop?from=1692608100000&to=1692785100000&tz=utc"
+    },
+    {
+      "title": "Cenário: tráfego alto (05–07/09/2023)",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": false,
+      "url": "/d/petshop-confiabilidade/petshop?from=1693922100000&to=1694099100000&tz=utc"
+    },
+    {
+      "title": "Cenário: tráfego variável (22–28/04/2023)",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": false,
+      "url": "/d/petshop-confiabilidade/petshop?from=1682193000000&to=1682688900000&tz=utc"
+    }
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "id": 100,
+      "title": "Índices do componente escolhido em \"Componente\" (janelas de 5 min, mínimo de 100 requisições)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "type": "ufmg-reliability-summary-panel",
+      "id": 1,
+      "title": "Só erro (meta: R_erro ≥ ${slo_erro:text} por janela)",
+      "description": "Disponibilidade A = fração das janelas de 5 min com pelo menos 99% de requisições sem erro. MTBF = tempo médio dentro da meta entre dois episódios; MTTR = duração média de um episódio (janelas ruins seguidas).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 300,
+        "countMode": "cumulative",
+        "latencyMode": "p95",
+        "failureMode": "error"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "legendFormat": "total acumulado",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "C",
+          "expr": "max(http_server_request_duration_window_seconds{componente=\"$servico\",quantile=\"$slo_lat\"})",
+          "legendFormat": "p95",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    },
+    {
+      "type": "ufmg-reliability-summary-panel",
+      "id": 2,
+      "title": "Só latência (meta: ${slo_lat:text}, com τ = ${tau_ms} ms)",
+      "description": "A janela cumpre a meta se a fração escolhida das requisições respondeu em até τ. Isso é o mesmo que o percentil correspondente (p50, p90, p95 ou p99) ficar abaixo de τ: por isso as metas possíveis são só esses quatro percentis, os que o dataset traz.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 300,
+        "countMode": "cumulative",
+        "latencyMode": "p95",
+        "failureMode": "latency"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "legendFormat": "total acumulado",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "C",
+          "expr": "max(http_server_request_duration_window_seconds{componente=\"$servico\",quantile=\"$slo_lat\"})",
+          "legendFormat": "p95",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    },
+    {
+      "type": "ufmg-reliability-summary-panel",
+      "id": 3,
+      "title": "Erro ou latência (definição da proposta, com as metas escolhidas no topo)",
+      "description": "Como na proposta: a janela falha se falhar em qualquer um dos dois modos (erro acima de 1% OU p95 acima de 200 ms).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 300,
+        "countMode": "cumulative",
+        "latencyMode": "p95",
+        "failureMode": "both"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "legendFormat": "total acumulado",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "C",
+          "expr": "max(http_server_request_duration_window_seconds{componente=\"$servico\",quantile=\"$slo_lat\"})",
+          "legendFormat": "p95",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 101,
+      "title": "Onde a falha acontece",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "panels": []
+    },
+    {
+      "type": "ufmg-reliability-window-grid-panel",
+      "id": 4,
+      "title": "Cada linha é um componente e cada coluna uma janela de 5 min: verde = cumpriu a meta de erro (${slo_erro:text}), vermelho = não cumpriu, cinza = menos de ${min_req} requisições",
+      "description": "Mostra em que componente e em que momento os erros passaram de 1%. Aparecem os 10 componentes do caminho que atende o usuário; uma janela vermelha isolada é desenhada com pelo menos 2 px para não sumir.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "minRequests": 100,
+        "rowLabel": "componente",
+        "countMode": "cumulative",
+        "hideUnjudged": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (componente) (http_server_request_duration_seconds_count{principal=\"sim\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "legendFormat": "{{componente}} total",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (componente) (http_server_request_duration_seconds_count{principal=\"sim\",error_type!=\"\"})",
+          "legendFormat": "{{componente}} erros",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "id": 5,
+      "title": "Confiabilidade por componente no período (R_erro = 1 − erros / requisições)",
+      "description": "Os 10 componentes do caminho que atende o usuário, do menos para o mais confiável.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "expr": "sum by (componente) (max_over_time(http_server_request_duration_seconds_count{principal=\"sim\"}[$__range]) - min_over_time(http_server_request_duration_seconds_count{principal=\"sim\"}[$__range]))"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "expr": "sum by (componente) (max_over_time(http_server_request_duration_seconds_count{principal=\"sim\",error_type!=\"\"}[$__range]) - min_over_time(http_server_request_duration_seconds_count{principal=\"sim\",error_type!=\"\"}[$__range]))"
+        },
+        {
+          "refId": "C",
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "expr": "1 - (sum by (componente) (max_over_time(http_server_request_duration_seconds_count{principal=\"sim\",error_type!=\"\"}[$__range]) - min_over_time(http_server_request_duration_seconds_count{principal=\"sim\",error_type!=\"\"}[$__range]))) / (sum by (componente) (max_over_time(http_server_request_duration_seconds_count{principal=\"sim\"}[$__range]) - min_over_time(http_server_request_duration_seconds_count{principal=\"sim\"}[$__range])))"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "componente": "Componente",
+              "Value #A": "Requisições",
+              "Value #B": "Erros",
+              "Value #C": "R_erro"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "R_erro",
+                "desc": false
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "R_erro"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requisições"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Erros"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "id": 102,
+      "title": "Séries do componente escolhido",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 6,
+      "title": "R_erro por janela de 5 min e a meta escolhida",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.9,
+          "max": 1.001,
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "meta"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - sum(idelta(http_server_request_duration_seconds_count{componente=\"$servico\",error_type!=\"\"}[10m])) / sum(idelta(http_server_request_duration_seconds_count{componente=\"$servico\"}[10m]))",
+          "legendFormat": "R_erro",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "vector($slo_erro)",
+          "legendFormat": "meta",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 7,
+      "title": "Tempo de resposta por janela: percentil da meta, p50 e τ",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "maxDataPoints": 5000,
+      "interval": "5m",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "τ"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(http_server_request_duration_window_seconds{componente=\"$servico\",quantile=\"$slo_lat\"})",
+          "legendFormat": "percentil da meta (quantil $slo_lat)",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "max(http_server_request_duration_window_seconds{componente=\"$servico\",quantile=\"0.5\"})",
+          "legendFormat": "p50",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        },
+        {
+          "refId": "C",
+          "expr": "vector($tau_ms / 1000)",
+          "legendFormat": "τ",
+          "editorMode": "code",
+          "range": true,
+          "interval": "5m"
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "type": "datasource",
+        "label": "Datasource",
+        "query": "prometheus",
+        "hide": 2,
+        "current": {
+          "selected": true,
+          "text": "Prometheus (PetShop)",
+          "value": "petshop-prom"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "servico",
+        "type": "query",
+        "label": "Componente",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "query": {
+          "query": "label_values(http_server_request_duration_seconds_count{principal=\"sim\"}, componente)",
+          "refId": "servico"
+        },
+        "definition": "label_values(http_server_request_duration_seconds_count{principal=\"sim\"}, componente)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {
+          "selected": true,
+          "text": "Site (front-end)",
+          "value": "Site (front-end)"
+        },
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "tau_ms",
+        "type": "custom",
+        "label": "τ (ms)",
+        "query": "200 (proposta) : 200,250 : 250,300 : 300,350 : 350,400 : 400,500 : 500",
+        "current": {
+          "selected": true,
+          "text": "200 (proposta)",
+          "value": "200"
+        },
+        "options": [
+          {
+            "text": "200 (proposta)",
+            "value": "200",
+            "selected": true
+          },
+          {
+            "text": "250",
+            "value": "250",
+            "selected": false
+          },
+          {
+            "text": "300",
+            "value": "300",
+            "selected": false
+          },
+          {
+            "text": "350",
+            "value": "350",
+            "selected": false
+          },
+          {
+            "text": "400",
+            "value": "400",
+            "selected": false
+          },
+          {
+            "text": "500",
+            "value": "500",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": true,
+        "description": "Só para teste: a proposta fixou o valor marcado com (proposta)."
+      },
+      {
+        "name": "slo_lat",
+        "type": "custom",
+        "label": "Meta de latência",
+        "query": "50% até τ : 0.5,90% até τ : 0.9,95% até τ (proposta) : 0.95,99% até τ : 0.99",
+        "current": {
+          "selected": true,
+          "text": "95% até τ (proposta)",
+          "value": "0.95"
+        },
+        "options": [
+          {
+            "text": "50% até τ",
+            "value": "0.5",
+            "selected": false
+          },
+          {
+            "text": "90% até τ",
+            "value": "0.9",
+            "selected": false
+          },
+          {
+            "text": "95% até τ (proposta)",
+            "value": "0.95",
+            "selected": true
+          },
+          {
+            "text": "99% até τ",
+            "value": "0.99",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false,
+        "description": "Só para teste: a proposta fixou 95%. Só há 50, 90, 95 e 99% porque são os percentis que o dataset traz."
+      },
+      {
+        "name": "slo_erro",
+        "type": "custom",
+        "label": "Meta de erro",
+        "query": "95% : 0.95,98% : 0.98,99% (proposta) : 0.99,99.5% : 0.995,99.9% : 0.999",
+        "current": {
+          "selected": true,
+          "text": "99% (proposta)",
+          "value": "0.99"
+        },
+        "options": [
+          {
+            "text": "95%",
+            "value": "0.95",
+            "selected": false
+          },
+          {
+            "text": "98%",
+            "value": "0.98",
+            "selected": false
+          },
+          {
+            "text": "99% (proposta)",
+            "value": "0.99",
+            "selected": true
+          },
+          {
+            "text": "99.5%",
+            "value": "0.995",
+            "selected": false
+          },
+          {
+            "text": "99.9%",
+            "value": "0.999",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": true,
+        "description": "Só para teste: a proposta fixou 99%. Também aceita um valor digitado, em fração (0.995) ou porcentagem (99.5)."
+      },
+      {
+        "name": "min_req",
+        "type": "custom",
+        "label": "Mínimo de requisições",
+        "query": "50 : 50,100 (proposta) : 100,200 : 200,500 : 500",
+        "current": {
+          "selected": true,
+          "text": "100 (proposta)",
+          "value": "100"
+        },
+        "options": [
+          {
+            "text": "50",
+            "value": "50",
+            "selected": false
+          },
+          {
+            "text": "100 (proposta)",
+            "value": "100",
+            "selected": true
+          },
+          {
+            "text": "200",
+            "value": "200",
+            "selected": false
+          },
+          {
+            "text": "500",
+            "value": "500",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": true,
+        "description": "Só para teste: a proposta fixou o valor marcado com (proposta)."
+      }
+    ]
+  }
+}

@@ -38,5 +38,42 @@ export const plugin = new PanelPlugin<SummaryOptions>(SummaryPanel).setPanelOpti
       description: 'Usado para converter MTBF/MTTR em tempo (ex.: 300 = 5m, 3600 = 1h)',
       defaultValue: DEFAULT_SUMMARY_OPTIONS.windowSeconds,
       settings: { min: 1, step: 1 },
+    })
+    .addRadio({
+      path: 'countMode',
+      name: 'Formato das contagens (A e B)',
+      description: 'Por janela (ex.: increase) ou contador acumulado, com a diferença feita no painel',
+      defaultValue: DEFAULT_SUMMARY_OPTIONS.countMode,
+      settings: {
+        options: [
+          { value: 'perWindow', label: 'Por janela' },
+          { value: 'cumulative', label: 'Acumulado' },
+        ],
+      },
+    })
+    .addRadio({
+      path: 'latencyMode',
+      name: 'Fonte da latência (C)',
+      description: 'Baldes do histograma (le) ou o p95 da janela em segundos (janela ruim se p95 > τ)',
+      defaultValue: DEFAULT_SUMMARY_OPTIONS.latencyMode,
+      settings: {
+        options: [
+          { value: 'histogram', label: 'Histograma' },
+          { value: 'p95', label: 'p95 da janela' },
+        ],
+      },
+    })
+    .addRadio({
+      path: 'failureMode',
+      name: 'Modo de falha',
+      description: 'O que torna a janela ruim: erro ou latência (proposta), só erro ou só latência',
+      defaultValue: DEFAULT_SUMMARY_OPTIONS.failureMode,
+      settings: {
+        options: [
+          { value: 'both', label: 'Erro ou latência' },
+          { value: 'error', label: 'Só erro' },
+          { value: 'latency', label: 'Só latência' },
+        ],
+      },
     });
 });

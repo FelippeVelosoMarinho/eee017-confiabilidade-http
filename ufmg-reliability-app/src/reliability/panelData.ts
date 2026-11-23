@@ -70,13 +70,23 @@ export function bucketSeries(frames: DataFrame[] | undefined): Array<{ le: numbe
 export function alignToReference(
   reference: number[],
   other: NumericSeries | null,
+  fill = 0,
 ): number[] {
   if (!other) {
-    return reference.map(() => 0);
+    return reference.map(() => fill);
   }
   const map = new Map<number, number>();
   for (let i = 0; i < other.times.length; i++) {
     map.set(other.times[i], other.values[i]);
   }
-  return reference.map((t) => map.get(t) ?? 0);
+  return reference.map((t) => map.get(t) ?? fill);
+}
+
+export function perWindowFromCumulative(values: number[]): number[] {
+  const out: number[] = [];
+  for (let i = 1; i < values.length; i++) {
+    const d = values[i] - values[i - 1];
+    out.push(d >= 0 ? d : values[i]);
+  }
+  return out;
 }

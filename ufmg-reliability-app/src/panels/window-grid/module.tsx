@@ -31,7 +31,26 @@ export const plugin = new PanelPlugin<WindowGridOptions>(WindowGridPanel).setPan
           { value: 'server_address', label: 'server_address' },
           { value: 'http_route', label: 'http_route' },
           { value: 'instance', label: 'instance' },
+          { value: 'service_name', label: 'service_name' },
+          { value: 'componente', label: 'componente' },
         ],
       },
+    })
+    .addRadio({
+      path: 'countMode',
+      name: 'Formato das contagens (A e B)',
+      defaultValue: DEFAULT_WG_OPTIONS.countMode,
+      settings: {
+        options: [
+          { value: 'perWindow', label: 'Por janela' },
+          { value: 'cumulative', label: 'Acumulado' },
+        ],
+      },
+    })
+    .addBooleanSwitch({
+      path: 'hideUnjudged',
+      name: 'Esconder componentes sem janela julgada',
+      description: 'Some com as linhas em que nenhuma janela chega ao volume mínimo',
+      defaultValue: DEFAULT_WG_OPTIONS.hideUnjudged,
     });
 });
