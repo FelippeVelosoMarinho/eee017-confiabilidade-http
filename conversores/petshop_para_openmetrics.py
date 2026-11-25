@@ -1,3 +1,12 @@
+"""PetShop Dataset (Amazon Science, CloudWatch em janelas de 5 min) -> OpenMetrics no contrato do plugin.
+
+Adaptador para fonte já agregada por janela (não há uma linha por requisição):
+- requisições boas e com erro viram o contador http_server_request_duration_seconds_count,
+  o de erro com error_type="_OTHER" (convenção OTel para tipo de erro desconhecido);
+- p50/p90/p95/p99 da janela viram o gauge http_server_request_duration_window_seconds{quantile}.
+
+Uso: python conversores/petshop_para_openmetrics.py [--dados casos/petshop/data] [--saida arquivo.om]
+"""
 from __future__ import annotations
 
 import argparse
@@ -67,8 +76,8 @@ def series_do_cenario(df: pd.DataFrame, cenario: str):
 def main():
     base = Path(__file__).resolve().parent
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dados", type=Path, default=base.parent / "data")
-    ap.add_argument("--saida", type=Path, default=base / "saida" / "metrics.om")
+    ap.add_argument("--dados", type=Path, default=base.parent / "casos" / "petshop" / "data")
+    ap.add_argument("--saida", type=Path, default=base / "saida" / "petshop.om")
     args = ap.parse_args()
     args.saida.parent.mkdir(parents=True, exist_ok=True)
 

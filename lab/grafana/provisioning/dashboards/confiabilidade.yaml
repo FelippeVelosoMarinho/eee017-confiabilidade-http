@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: 'petshop'
+  - name: 'confiabilidade'
     orgId: 1
     folder: 'Confiabilidade'
     type: file

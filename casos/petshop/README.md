@@ -101,21 +101,23 @@ data/*.csv ──conversor──▶ OpenMetrics ──promtool──▶ Promethe
 ### Como subir (só precisa do Docker Desktop)
 
 ```bash
-cd petshop/lab
+cd lab            # na raiz do repositório
 docker compose up --build
 ```
+
+O lab é o mesmo do Hugging Face: sobe os dois casos juntos (ver o README da raiz).
 
 A primeira vez demora alguns minutos: o Docker converte os dados, gera os blocos do Prometheus e compila o plugin. Depois:
 
 - **Grafana:** <http://localhost:3000> → Dashboards → Confiabilidade → *Confiabilidade — PetShop (caso secundário)*. Entra sem senha.
-- **Prometheus:** <http://localhost:9090>, para testar consultas.
+- **Prometheus do PetShop:** <http://localhost:9091>, para testar consultas.
 - **Para trocar de cenário,** use os links no topo do dashboard. Cada cenário está numa data diferente (abril, agosto e setembro de 2023), e o link ajusta o período. O dashboard não tem seletor de cenário: quem decide o que aparece é o período.
 - **No topo,** "Componente" escolhe o componente dos índices e das séries. O quadro e a tabela mostram os 10 componentes principais, os do caminho que atende o usuário.
 - **Para testar outras metas,** use os seletores τ, "Meta de latência", "Meta de erro" e "Mínimo de requisições". Os valores marcados com "(proposta)" são os oficiais; os outros servem só para a análise de sensibilidade. A meta de latência só aceita 50, 90, 95 e 99%, porque são os percentis que o dataset traz (a janela passa se o percentil correspondente ficar abaixo de τ). Os números do dashboard com τ = 350 ms batem com a tabela de sensibilidade acima (96,2% e 51 episódios no tráfego variável).
 - **Para parar:** `docker compose down`.
 - **Depois de atualizar o código ou os dados,** rode `docker compose down -v` e depois `docker compose up --build`. O `-v` apaga os volumes antigos e garante que nada da versão anterior fique para trás.
 
-### O conversor (`conversor/petshop_para_openmetrics.py`)
+### O conversor (`conversores/petshop_para_openmetrics.py`, na raiz)
 
 Os dados não vieram de uma instrumentação OpenTelemetry; o conversor os **mapeia** para as convenções semânticas do OTel para HTTP:
 
@@ -131,9 +133,9 @@ Além do nome técnico (`service_name`), cada série leva o rótulo `componente`
 - **O histograma só tem o balde +Inf,** porque o dataset não traz a duração de cada requisição.
 - **Nada foi inventado:** nem código HTTP, nem duração por requisição, nem horário de chegada.
 
-### O que mudou no plugin (`ufmg-reliability-app`)
+### Opções do plugin que o PetShop usa (`ufmg-reliability-app`)
 
-O comportamento antigo continua sendo o padrão, então o dashboard do Hugging Face não muda. O PetShop liga três opções novas:
+O dashboard do PetShop liga estas opções (a lista completa de parâmetros está no README da raiz):
 
 | Opção | Valores | Para quê |
 |---|---|---|
@@ -141,11 +143,11 @@ O comportamento antigo continua sendo o padrão, então o dashboard do Hugging F
 | Fonte da latência | histograma (padrão) / **p95 da janela** | A janela fica ruim se p95 > τ, o que é o mesmo que "menos de 95% até τ" |
 | Modo de falha (painel Summary) | erro ou latência (padrão) / só erro / só latência | Mostrar A, MTBF e MTTR de cada modo separado |
 
-O quadro de janelas ganhou a opção de linhas por `service_name`. O dashboard está em `ufmg-reliability-app/provisioning/dashboards/ufmg/petshop.json`.
+O quadro de janelas usa o rótulo `componente` nas linhas e julga só o erro (a latência nunca cumpre a meta e deixaria o quadro todo vermelho; dá para trocar nas opções do painel). O dashboard está em `ufmg-reliability-app/provisioning/dashboards/ufmg/petshop.json`.
 
 ### Conferência
 
-O teste `ufmg-reliability-app/src/reliability/__tests__/e2e-petshop.test.ts` consulta o Prometheus, passa as séries pelo **mesmo código do painel Summary** e confere com a análise em Python. Nos três cenários, A_erro, o número de episódios e o MTTR batem exatamente. Para rodar, com o lab no ar:
+O teste `ufmg-reliability-app/src/reliability/__tests__/e2e-petshop.test.ts` consulta o Prometheus, passa as séries pelo **mesmo código do painel Summary** e confere com a análise em Python. Nos três cenários, A_erro, o número de episódios e o MTTR batem exatamente. Para rodar, com o lab no ar (Prometheus do PetShop na porta 9091):
 
 ```bash
 cd ufmg-reliability-app

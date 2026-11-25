@@ -4,110 +4,119 @@ Trabalho prático da disciplina **EEE 017 — Confiabilidade de Sistemas** (Enge
 
 Felippe Veloso Marinho, Josoe Santos Queiroz, Maria Eduarda Sampaio, Matheus Amorim Soares Salles e Raphael Lucas Silva Amaral.
 
-## A ideia
+## O que é
 
-O plugin é um motor só de confiabilidade, com painel no Grafana. Ele não é universal no sentido de engolir qualquer arquivo cru. Cada tipo de dado precisa de um **adaptador**: uma peça que traduz as linhas daquele arquivo para o mesmo registro interno. A matemática, os painéis e as perguntas ficam iguais. Mudam a fonte e o que conta como falha.
-
-O que roda agora, para a apresentação, são dois adaptadores no mesmo motor (`python3 analisar.py`):
-
-| Adaptador | Identificador | O arquivo |
-| --- | --- | --- |
-| Funil de vendas | `funil.vendas` | CSV diário de cerca de três meses, passado por `--funil`. Não entra no Git |
-| Nicolas Cage × aviação | `cage.aviacao` | Filmografia pública e acidentes aéreos catalogados no Wikidata, em `data/cage/` |
-
-A descriptografia (`http.descriptografia`) continua no contrato, mas não há linha por operação no log atual. Ela não entra nesta rodada.
-
-```bash
-python3 analisar.py --funil "/caminho/do-funil-diario.csv"
-```
-
-O funil usa o dia como janela e a semana como unidade. O retorno do dia estoura quando fica abaixo do P20 dos dias anteriores. O Cage usa o mês como janela e o ano como unidade. O ano estoura no primeiro mês em que estreia um filme e a contagem de acidentes passa da média dos meses anteriores. Os dois gravam o mesmo tipo de relatório em `output/`.
-
-Nenhum dos dois pede nome de pessoa, de conta, de cliente ou de produto. O recorte entra como código opaco.
-
-A descrição acadêmica está em [docs/proposta.md](docs/proposta.md). O desenho da caixa está em [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md). Colunas, critérios e o que o painel devolve estão em [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md).
-
-## Como o modelo funciona
-
-Cada linha do arquivo vira um evento. O adaptador junta os eventos em **janelas** (intervalos sem sobreposição) e em **unidades** (a coisa que sobrevive ou falha).
-
-No funil, a janela é um dia e a unidade é um dia de um segmento. Na descriptografia, a janela é de 5 a 15 minutos e a unidade é um dia de serviço.
-
-Uma janela só entra na conta se tiver volume mínimo. No HTTPS, o ponto de partida é 100 requisições em 5 minutos: uma falha isolada não derruba o índice. Um dia sem tráfego sai da amostra. Ele não vira sucesso e não vira falha.
-
-Para cada janela elegível o motor compara a carga com um objetivo declarado antes de olhar a série. Exemplos de carga: queda de uma etapa, retorno do dia, fração de descriptografias com erro, fração lenta. A janela está **dentro do objetivo** quando a carga não cruza esse limite.
-
-A **fração de janelas dentro do objetivo** é a disponibilidade. Se o dia teve 20 janelas com tráfego e 18 ficaram abaixo do limite, a disponibilidade daquele dia é 18/20 = 90%. O número responde: quanto do tempo observado o serviço (ou o funil) cumpriu o que foi combinado.
-
-A **unidade** resume o dia inteiro em um de três estados:
-
-- **Ok.** Nenhuma janela elegível cruzou o limite.
-- **Falhou em \(t\).** A primeira janela ruim terminou no minuto \(t\), contado desde o começo do dia. As janelas ruins seguintes não mudam esse \(t\): a vida da unidade acaba no primeiro estouro.
-- **Fim sem estouro (censura).** A unidade foi observada até o fim e o limite não foi cruzado. Isso é informação: “até aqui, não falhou”. Tratar esse dia como falha à meia-noite encurtaria a vida de mentira. Censura não é dia vazio. Dia vazio é excluído.
-
-Com muitos dias assim, o motor ajusta uma Weibull: a curva de quanto tempo uma unidade tende a aguentar até o primeiro estouro. Dias censurados entram na conta como “a falha, se vier, vem depois”. Em seguida estima \(P(S>L)\): a chance de a tolerância (o objetivo, ou a faixa histórica) ainda cobrir a carga observada.
-
-## O que isso vê além de uma média de falhas
-
-Uma média do mês — “0,4% das descriptografias falharam” — mistura três coisas diferentes.
-
-Um exemplo didático, com números inventados. O objetivo é: janela de 5 minutos com taxa de erro acima de 1% está ruim. Num dia há 200 janelas com tráfego.
-
-- 197 janelas têm erro perto de zero.
-- Três janelas seguidas, por volta das 14h, passam de 1%. Depois o serviço volta.
-
-A média do dia pode continuar baixa, porque três janelas ruins se diluem em duzentas. O modelo marca outra coisa: a unidade **falhou em \(t = 14\,\mathrm{h}\)**, houve **um episódio** de 15 minutos, e o resto do dia não apaga esse fato.
-
-Dois nomes medem o episódio, não a média:
-
-- **MTBF** (*mean time between failures*) é o tempo médio dentro do objetivo entre um episódio e o próximo. MTBF curto: o limite é cruzado o tempo todo.
-- **MTTR** (*mean time to recovery*) é a duração média do episódio, o tempo até a janela voltar para dentro do objetivo. MTTR longo: quando quebra, demora a voltar.
-
-Os dois se completam. Perder disponibilidade porque falha toda hora é diferente de perder porque uma pane dura a tarde. A média de falhas não separa esses casos. Também não diz se a lentidão piorou em relação à própria série, mesmo com status de sucesso, nem guarda os dias que passaram inteiros sem estouro.
-
-## Funil de vendas — como apresentar os três meses
-
-O arquivo cobre cerca de três meses. Cada linha é um passo: instante, segmento opaco, etapa (`impressao`, `visita`, `carrinho`, `checkout`, `compra`) e, se o retorno interessar, custo e receita.
-
-A apresentação que cabe no painel é um quadro:
-
-- Cada **linha** é um segmento (o código opaco, nunca o nome).
-- Cada **coluna** é um dia, ao longo dos cerca de noventa dias.
-- A **cor** é o estado da unidade: ok, falhou em \(t\), fim sem estouro, ou em branco se aquele dia não teve evento.
-- Ao abrir um dia vermelho, aparece a etapa que esvaziou e se o estouro foi de jornada ou de retorno.
-
-O que se observa: em que etapa as pessoas saem, se o problema mora num segmento, se os dias ruins vêm em sequência (MTTR) ou espalhados (MTBF baixo), e quantos dias atravessam o trimestre sem cruzar o limite. A vantagem é sair de uma taxa única de conversão do trimestre e ver o dia e a etapa em que o funil deixou o objetivo.
-
-## Requisição HTTPS de descriptografia — o que entra na conta
-
-Num serviço web o pedido chega pelo front, passa pela API e, quando o dado está fechado, uma etapa abre esse dado. Só essa etapa alimenta o adaptador `http.descriptografia`.
-
-A arquitetura medida é esta:
+Um plugin do Grafana que calcula os índices de confiabilidade da proposta sobre métricas HTTP no formato do OpenTelemetry. Os índices são: R por requisição (modelo de Nelson), disponibilidade em relação ao SLO, MTBF e MTTR. As metas, o limite de lentidão, o tamanho da janela e o volume mínimo mudam conforme o sistema avaliado.
 
 ```text
-front  →  API  →  [descriptografia]  →  banco, modelo, gravação, interface
-                         │
-                         └── uma linha por operação
+fonte (log ou métrica) ──conversor──▶ OpenMetrics (convenção OTel) ──▶ Prometheus ──▶ plugin + dashboard no Grafana
 ```
 
-A operação pode pedir a chave a um serviço externo, por HTTPS, e em seguida abrir o envelope no próprio processo. As duas coisas pertencem à mesma etapa. O que vem antes (login, listagem) e o que vem depois (modelo, tela) não entra neste adaptador. Medir a requisição inteira da API misturaria esses tempos e esses erros com a abertura do dado.
+O plugin não lê arquivo cru. Cada fonte tem um **conversor** (o adaptador) que grava sempre o mesmo contrato:
 
-Cada linha do arquivo é uma operação: instante, rota agregada, status (`ok`, `fail`, `key_mismatch`, `timeout`), duração, identificador lógico da chave (sem material secreto) e um `request_id`. A coleta útil do serviço é de cerca de quinze dias.
+| Métrica | Significado |
+|---|---|
+| `http_server_request_duration_seconds_count` | total de requisições (contador acumulado) |
+| o mesmo contador com `error_type` | requisições com falha no modo erro (5xx, ou o erro que a fonte marca) |
+| `http_server_request_duration_seconds_bucket{le}` | latência como histograma (quando a fonte tem a duração de cada requisição) |
+| `http_server_request_duration_window_seconds{quantile}` | latência como percentil da janela (quando a fonte só traz percentis) |
 
-O que se observa: a que horas a etapa sai do objetivo, se a causa é erro, chave errada, estouro de tempo ou lentidão relativa à própria série, quanto tempo ela leva para voltar, e quais dias passam em branco de falha (censura) ou sem tráfego (fora da amostra). A vantagem é a mesma do funil, noutro objeto: a confiabilidade da abertura do dado, vista em janela, e não uma média solta de erros no log.
+Os painéis recebem três consultas: **A** = total, **B** = erros, **C** = latência.
 
-## Documentos
+## O que está em cada pasta
 
-- [docs/proposta.md](docs/proposta.md) — descrição do trabalho, sem identificar fonte.
-- [docs/grupo_1_proposal.pdf](docs/grupo_1_proposal.pdf) — texto entregue na disciplina.
-- [docs/caixa-fechada-tp.md](docs/caixa-fechada-tp.md) — motor, portas e os dois adaptadores.
-- [docs/plugin-preditivo-confiabilidade.md](docs/plugin-preditivo-confiabilidade.md) — colunas, critérios e leituras do painel.
-- [docs/planner-coleta.md](docs/planner-coleta.md) — o que já dá para analisar e o que ainda precisa ser gravado.
-- [docs/proposal/](docs/proposal/) — fonte LaTeX.
-- [docs/OrientacoesTrabalhoPratico.pdf](docs/OrientacoesTrabalhoPratico.pdf) — orientações da disciplina.
+**Entregável**
 
-## Licença
+| Pasta | Conteúdo |
+|---|---|
+| [`ufmg-reliability-app/`](ufmg-reliability-app/) | O plugin: app com página de explicação, painel de resumo (A, MTBF, MTTR, R) e quadro de janelas. Dashboards em `provisioning/dashboards/ufmg/` |
+| [`conversores/`](conversores/) | Adaptadores fonte → OpenMetrics. Um genérico para log de requisições, configurado por JSON, e um para o PetShop |
+| [`lab/`](lab/) | `docker compose` que converte os dois casos, sobe um Prometheus para cada um e um Grafana com o plugin |
+| [`casos/huggingface/`](casos/huggingface/) | Caso principal: `access_logs.csv` do mindweave/web-server-logs e o relatório que serve de gabarito |
+| [`casos/petshop/`](casos/petshop/) | Caso secundário: PetShop Dataset (Amazon Science), análise em Python e resultados |
+| [`docs/`](docs/) | Proposta (LaTeX e PDF), relatório final (LaTeX) e orientações da disciplina |
 
-O código e os textos escritos neste repositório estão sob a licença MIT. Veja [LICENSE](LICENSE).
+**Contexto (não faz parte da entrega)**
 
-A proposta do grupo e o PDF de orientações são material da disciplina e permanecem com os autores desses documentos.
+| Pasta | Conteúdo |
+|---|---|
+| [`contexto/`](contexto/) | Versões anteriores e material de trabalho: motor em Python do funil/Cage, caixa fechada, planner de coleta, backfill antigo do HF, screenshots antigos. Ver [`contexto/README.md`](contexto/README.md) |
+
+## Como rodar
+
+Só precisa do Docker Desktop.
+
+```bash
+cd lab
+docker compose up --build
+```
+
+A primeira vez demora alguns minutos: o Docker converte os dados, gera os blocos do Prometheus e compila o plugin.
+
+- **Grafana:** <http://localhost:3000>, sem senha. Os dashboards estão em *Dashboards → Confiabilidade*:
+  - *Confiabilidade — Hugging Face (web-server-logs)*
+  - *Confiabilidade — PetShop (caso secundário)*
+- **Prometheus do Hugging Face:** <http://localhost:9090>
+- **Prometheus do PetShop:** <http://localhost:9091>
+- **Para parar:** `docker compose down`. Depois de mudar código ou dados: `docker compose down -v` e `docker compose up --build`.
+
+## O que se configura
+
+Tudo vem com o padrão da proposta e pode ser trocado sem mexer no código. A prioridade é esta: **variável do dashboard > opção do painel > padrão da proposta**.
+
+| Parâmetro | Variável do dashboard | Padrão (proposta) | Observação |
+|---|---|---|---|
+| Duração da janela | `$window` | 5 min | Vai no intervalo mínimo da consulta, para o passo ser igual à janela. O plugin lê a duração do próprio passo. HF: 24 h |
+| Volume mínimo por janela | `$min_req` | 100 | Abaixo disso a janela não é julgada |
+| τ (limite de requisição lenta) | `$tau_ms` (ms) ou `$tau_s` (s) | 200 ms | No histograma, τ exato precisa ser um balde; entre baldes o plugin interpola |
+| Meta de erro R*_erro | `$slo_erro` | 99% | Aceita 0.99 ou 99 |
+| Meta de latência R*_lat | `$slo_lat` | 95% | Aceita 0.95 ou 95 |
+| Modo de falha | `$modo_falha` | erro ou latência | `ambos`, `erro` ou `latencia`. Os dashboards mostram os três lado a lado |
+| Janela não julgada corta o episódio | `$censura_corta` | sim | `sim`/`nao` ou `1`/`0` |
+| Linhas do quadro | `$agrupar` | `server_address` | Qualquer rótulo: `job`, `http_route`, `componente`... |
+| Formato das contagens | opção do painel | por janela | **Acumulado** é o recomendado: o painel faz a diferença e a conta fica exata |
+| Fonte da latência | opção do painel | histograma | Ou percentil da janela (a janela é ruim se o percentil passa de τ) |
+
+### Para avaliar outro sistema
+
+1. **Log com uma linha por requisição:** copie `conversores/configs/huggingface.json`. Ajuste as colunas de horário e duração, a regra de erro (coluna e expressão regular), os rótulos e os baldes (inclua o τ que o grupo quer usar). Rode `conversores/requisicoes_para_openmetrics.py`.
+2. **Sistema já instrumentado com OpenTelemetry:** não precisa de conversor. O coletor já grava `http_server_request_duration_seconds` e `error_type`.
+3. Copie um dos dashboards e troque as variáveis.
+
+## Regras de cálculo
+
+- Uma requisição falha por **erro** (código 5xx, ou o que a fonte marca em `error_type`) ou por **lentidão** (duração acima de τ).
+- A janela fica **ruim** quando R_erro < R*_erro ou R_lat < R*_lat. Os modos também são calculados separadamente.
+- Uma janela abaixo do mínimo **não é julgada**: não conta como boa nem como ruim. Por padrão ela **encerra o episódio em curso**, porque não se sabe o que aconteceu nela.
+- **Disponibilidade A** = janelas boas / janelas julgadas.
+- **MTBF** = janelas boas / episódios.
+- **MTTR** = janelas ruins / episódios.
+- Vale A = MTBF / (MTBF + MTTR).
+- **R do período** = 1 − f/n, somando todas as requisições.
+- Se as falhas passarem do total numa janela, o painel avisa. É sinal de consultas A e B trocadas, como o erro de 116% do Colab.
+
+## Conferência
+
+Os testes do plugin (`cd ufmg-reliability-app && npm ci && npx jest`) reproduzem o relatório do Hugging Face a partir dos totais diários do CSV. Os valores são janela de 24 h, mínimo 100, τ = 200 ms e metas de 99% e 95%. O resultado:
+
+| | Relatório | Plugin |
+|---|---|---|
+| Dias julgados | 28 de 37 | 28 de 37 |
+| Dias dentro das duas metas | 0 | 0 |
+| Dias dentro só da meta de erro | 4 (13/01, 17/01, 31/01, 05/02) | os mesmos 4 |
+| Episódios | 6 (6, 6, 5, 5, 5 e 1 dia) | 6 |
+| MTTR | 4,7 dias | 28/6 = 4,67 dias |
+| R_erro / R_lat do arquivo | 97,80% / 75,20% | 97,80% / 75,20% |
+
+Com o lab no ar, `RUN_E2E=1 npx jest e2e` confere os mesmos números contra o Prometheus. Também confere os do PetShop contra `casos/petshop/resultados/`.
+
+## Dados e licenças
+
+- O código e os textos deste repositório estão sob a licença MIT ([LICENSE](LICENSE)).
+- **Hugging Face — mindweave/web-server-logs:** dado sintético, licença CC BY-NC 4.0, Mindweave Technologies. <https://huggingface.co/datasets/mindweave/web-server-logs>
+- **PetShop Dataset:** CC BY 4.0. Hardt et al. (2024), *The PetShop Dataset — Finding Causes of Performance Issues across Microservices*, CLeaR 2024. <https://github.com/amazon-science/petshop-root-cause-analysis>
+- A proposta do grupo e o PDF de orientações são material da disciplina e permanecem com seus autores.
+
+## Uso de IA
+
+Partes do código, dos conversores, dos dashboards e destes textos foram feitas com apoio do Claude (Anthropic), a pedido do grupo. Pelas orientações da disciplina, o grupo confere as contas, explica cada passo e declara esse uso no documento final.

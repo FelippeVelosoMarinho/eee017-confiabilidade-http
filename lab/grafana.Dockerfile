@@ -1,3 +1,4 @@
+# Compila o plugin e instala no Grafana.
 FROM node:24-bookworm-slim AS plugin
 WORKDIR /src
 COPY ufmg-reliability-app/package.json ufmg-reliability-app/package-lock.json ./
