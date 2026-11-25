@@ -28,4 +28,4 @@ python -I conversores/requisicoes_para_openmetrics.py \
   --saida conversores/saida/huggingface.om
 ```
 
-O conversor genérico grava uma amostra só quando o contador muda. Por isso, o Prometheus que recebe o arquivo precisa de `--query.lookback-delta` maior que o maior intervalo entre eventos de uma série. O lab usa 60 dias. Os painéis usam o modo de contagem **acumulado**.
+O conversor genérico grava uma amostra só quando o contador muda. Por isso, o Prometheus que recebe o arquivo precisa de `--query.lookback-delta` maior que a duração do conjunto (o conversor imprime o mínimo). O lab usa 60 dias. Os painéis usam o modo de contagem **acumulado**.

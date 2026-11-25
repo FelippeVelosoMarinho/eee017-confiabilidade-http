@@ -1,4 +1,4 @@
-# Hugging Face — mindweave/web-server-logs (caso principal)
+# Hugging Face — mindweave/web-server-logs
 
 ## O dado
 
@@ -19,7 +19,7 @@ access_logs.csv ──conversores/requisicoes_para_openmetrics.py + configs/hugg
 - **Erro:** código 5xx. Vira o rótulo `error_type` com o próprio código. 4xx e 3xx não contam.
 - **Duração:** `response_time_ms` / 1000, em baldes. Os baldes são os recomendados pelo OTel mais 0,15, 0,2, 0,3, 0,35 e 0,4 s. Com isso, τ = 200 ms cai exatamente num balde e a conta de lentidão é exata.
 - **Rótulos:** `server_address`, `http_route`, `http_response_status_code` e `job`. IP, user agent e referrer ficam de fora.
-- **Amostras esparsas:** uma amostra por série só quando o contador muda, 1 ms depois do evento. Isso dá cerca de 126 mil amostras, contra os 20 milhões do backfill antigo de hora em hora. O Prometheus do lab roda com `--query.lookback-delta=60d`, então o valor do contador em qualquer instante é exato. O painel, no modo acumulado, tira a contagem de qualquer janela pela diferença entre dois pontos. A janela fica [início, fim), como a contagem por data do Colab.
+- **Amostras esparsas:** todas as séries começam com zero em 31/12/2023, e depois há uma amostra só quando o contador muda, 1 ms depois do evento. Isso dá cerca de 126 mil amostras, contra os 20 milhões do backfill antigo de hora em hora. O Prometheus do lab roda com `--query.lookback-delta=60d`, então o valor do contador em qualquer instante é exato. O painel, no modo acumulado, tira a contagem de qualquer janela pela diferença entre dois pontos. A janela fica [início, fim), como a contagem por data do Colab.
 
 ## Parâmetros do relatório
 

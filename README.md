@@ -32,8 +32,8 @@ Os painéis recebem três consultas: **A** = total, **B** = erros, **C** = latê
 | [`ufmg-reliability-app/`](ufmg-reliability-app/) | O plugin: app com página de explicação, painel de resumo (A, MTBF, MTTR, R) e quadro de janelas. Dashboards em `provisioning/dashboards/ufmg/` |
 | [`conversores/`](conversores/) | Adaptadores fonte → OpenMetrics. Um genérico para log de requisições, configurado por JSON, e um para o PetShop |
 | [`lab/`](lab/) | `docker compose` que converte os dois casos, sobe um Prometheus para cada um e um Grafana com o plugin |
-| [`casos/huggingface/`](casos/huggingface/) | Caso principal: `access_logs.csv` do mindweave/web-server-logs e o relatório que serve de gabarito |
-| [`casos/petshop/`](casos/petshop/) | Caso secundário: PetShop Dataset (Amazon Science), análise em Python e resultados |
+| [`casos/huggingface/`](casos/huggingface/) | Caso Hugging Face: `access_logs.csv` do mindweave/web-server-logs e o relatório que serve de gabarito |
+| [`casos/petshop/`](casos/petshop/) | Caso PetShop: PetShop Dataset (Amazon Science), análise em Python e resultados |
 | [`docs/`](docs/) | Proposta (LaTeX e PDF), relatório final (LaTeX) e orientações da disciplina |
 
 **Contexto (não faz parte da entrega)**
@@ -55,7 +55,7 @@ A primeira vez demora alguns minutos: o Docker converte os dados, gera os blocos
 
 - **Grafana:** <http://localhost:3000>, sem senha. Os dashboards estão em *Dashboards → Confiabilidade*:
   - *Confiabilidade — Hugging Face (web-server-logs)*
-  - *Confiabilidade — PetShop (caso secundário)*
+  - *Confiabilidade — PetShop (Amazon Science)*
 - **Prometheus do Hugging Face:** <http://localhost:9090>
 - **Prometheus do PetShop:** <http://localhost:9091>
 - **Para parar:** `docker compose down`. Depois de mudar código ou dados: `docker compose down -v` e `docker compose up --build`.

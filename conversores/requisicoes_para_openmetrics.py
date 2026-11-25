@@ -14,9 +14,9 @@ A requisição com falha no modo erro leva o rótulo error_type (o valor da colu
 por exemplo o código 5xx). Assim, total = count e erros = count{error_type!=""},
 qualquer que seja a fonte.
 
-Amostras esparsas: cada série recebe um zero logo antes do primeiro evento e uma amostra
-só quando o contador muda. O Prometheus precisa rodar com --query.lookback-delta maior
-que o maior intervalo entre eventos de uma série (o lab usa 60d). Com isso, o valor do
+Amostras esparsas: todas as séries recebem um zero um dia antes do primeiro dia do conjunto
+e depois uma amostra só quando o contador muda. O Prometheus precisa rodar com
+--query.lookback-delta maior que a duração do conjunto (o conversor imprime o mínimo; o lab usa 60d). Com isso, o valor do
 contador em qualquer instante é exato, e o painel, no modo "acumulado", tira a contagem
 de qualquer janela (5 min, 1 h, 24 h) pela diferença entre dois pontos.
 
@@ -96,6 +96,15 @@ def main() -> int:
         print("nenhuma linha lida", file=sys.stderr)
         return 1
 
+    primeiro = min(t for eventos in por_serie.values() for t in eventos)
+    ultimo = max(t for eventos in por_serie.values() for t in eventos)
+    inicio = (primeiro // 86400 - 1) * 86400
+    print(
+        f"zero em {datetime.fromtimestamp(inicio, tz=timezone.utc):%Y-%m-%d %H:%M} UTC; "
+        f"o --query.lookback-delta do Prometheus precisa passar de {(ultimo - inicio) / 86400:.0f} dias",
+        file=sys.stderr,
+    )
+
     args.saida.parent.mkdir(parents=True, exist_ok=True)
     amostras = 0
     finais = Counter()
@@ -109,10 +118,13 @@ def main() -> int:
             labs = dict(key)
             instantes = sorted(eventos)
             # Estado acumulado em cada instante com evento, mais um zero 1 s antes do primeiro.
+            # Todas as séries começam com zero no mesmo instante, um dia antes do primeiro dia
+            # do conjunto. Sem isso, a soma não existe antes do primeiro evento e a primeira
+            # janela do período se perde na diferença do contador acumulado.
             # A amostra vai 1 ms depois do evento: o Prometheus inclui no valor em t a amostra
             # exatamente em t, então um evento às 00:00:00 cairia na janela anterior. Com o
             # deslocamento, a janela fica [início, fim), como a contagem por data no Colab.
-            pontos = [(instantes[0] - 1, [0] * len(les), 0, 0.0)]
+            pontos = [(inicio, [0] * len(les), 0, 0.0)]
             acum = [0] * len(les)
             cont = 0
             soma = 0.0

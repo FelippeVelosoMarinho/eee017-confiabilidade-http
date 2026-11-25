@@ -109,7 +109,7 @@ O lab é o mesmo do Hugging Face: sobe os dois casos juntos (ver o README da rai
 
 A primeira vez demora alguns minutos: o Docker converte os dados, gera os blocos do Prometheus e compila o plugin. Depois:
 
-- **Grafana:** <http://localhost:3000> → Dashboards → Confiabilidade → *Confiabilidade — PetShop (caso secundário)*. Entra sem senha.
+- **Grafana:** <http://localhost:3000> → Dashboards → Confiabilidade → *Confiabilidade — PetShop (Amazon Science)*. Entra sem senha.
 - **Prometheus do PetShop:** <http://localhost:9091>, para testar consultas.
 - **Para trocar de cenário,** use os links no topo do dashboard. Cada cenário está numa data diferente (abril, agosto e setembro de 2023), e o link ajusta o período. O dashboard não tem seletor de cenário: quem decide o que aparece é o período.
 - **No topo,** "Componente" escolhe o componente dos índices e das séries. O quadro e a tabela mostram os 10 componentes principais, os do caminho que atende o usuário.
