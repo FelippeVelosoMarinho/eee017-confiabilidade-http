@@ -89,15 +89,43 @@ Há relato
 
 Contudo análises aprofundadas da confiabilidade de softwares ainda são caros devido ao alto custo de conhecimento necessário para que análises personalizadas e mais realistas sejam implementadas em empresas de pequeno e médio porte. 
 
-\section{Revisão de Literatura}
-A avaliação da confiabilidade de software é uma área extensivamente pesquisada mas ainda muito dispersa. 
-\subsection{Engenharia de confiabilidade de software}
-%% copiado
-A prática voltada à confiabilidade de sistemas web é conhecida como \textit{Site Reliability Engineering} (SRE) \cite{google_sre} e é prática comum no Brasil desde a metade da última década. 
-\subsection{Monitoramento e manutenção de sistemas de software}
+A base teórica para a organização e controle de sistemas automatizados de comunicação existe desde a metade do século passado \cite{KALMAN1960491} . A medição do que acontece em processos digitais é a melhor forma de lidar com a natureza intangível de sistemas de software. 
 
-%% copiado 
-\citeonline{oppenheimer2003} analisaram relatórios de falhas de três grandes serviços de Internet, distinguindo falhas de componentes de falhas de serviço, e identificaram o erro de operador como a maior causa em dois deles.
+No ambito de aplicativos digitais a forma de medição mais primitiva ainda em uso é o log, que consiste em uma cadeia de caractéres emitida na ocorrência de um evento. Contudo, restringir a medição de sistemas de software somente a essa estrutura é impraticável para sistemas distribuídos ou com alta taxa de uso. Para tanto a estrutura de traces e métricas 
+
+\section{Revisão de Literatura}
+
+A avaliação da confiabilidade de software é pesquisada em comunidades distintas --- dependabilidade, observabilidade de sistemas distribuídos e \textit{Site Reliability Engineering} (SRE) ---, cujas contribuições esta seção organiza em torno da avaliação quantitativa a partir de sinais padronizados por OpenTelemetry.
+
+\subsection{Confiabilidade e software}
+
+\citeonline{Avizienis2004} consolidam a taxonomia de \textit{dependability}, distinguindo falta, erro e falha --- distinção essencial em serviços distribuídos, nos quais um evento pode ser invisível no componente e manifesto como falha na borda. Métodos quantitativos clássicos como modelagem de tempos entre falhas e estimação de MTBF e MTTR \cite{oconnor2012,ruijters2015} são aplicáveis a software desde que haja uma definição operacional de falha.
+
+Sobre essa base, a prática de SRE \cite{google_sre,beyer2016sre} trata a confiabilidade como meta organizacional e a operacionaliza por indicadores (SLI) e objetivos (SLO) de nível de serviço \cite{jones2016slo}, com a proporção de requisições bem-sucedidas servindo de aproximação para a indisponibilidade não planejada \cite{alvidrez2016risk}. No Brasil, essa prática ainda é pouco adotada fora de grandes empresas, em função do custo de ferramentas proprietárias de monitoramento.
+
+\subsection{Observabilidade de sistemas distribuídos}
+
+A operacionalização da confiabilidade depende de instrumentação adequada. Os três sinais canônicos --- métricas, \textit{traces} e \textit{logs} --- foram consolidados a partir do Dapper \cite{Sigelman2010}, que mostrou como o rastreamento distribuído reconstrói o caminho de uma requisição entre serviços; \citeonline{10967524} oferecem revisão e taxonomia atualizadas sobre o tema em microsserviços.
+
+Apesar da padronização, a análise ainda é limitada. \citeonline{semish} mostram que a sobrecarga de coleta com OpenTelemetry é administrável, deslocando o custo para armazenamento e uso efetivo dos dados; \citeonline{bowen2021} corroboram, em pesquisa com dez empresas, que a análise dos dados coletados se apoia predominantemente em visualizações e métricas simples, com uso raro de aprendizado de máquina. Esse descompasso entre coleta e análise constitui uma lacuna prática que motiva ferramentas de cálculo direto de índices de confiabilidade sobre os sinais padronizados.
+
+\subsection{Modelagem de falhas em sistemas web}
+
+A confiabilidade de serviços deve considerar as falhas percebidas pelos usuários. \citeonline{oppenheimer2003} analisaram falhas de três grandes serviços de Internet, distinguindo falhas de componentes de falhas de serviço, e identificaram o erro de operador como maior causa. \citeonline{tian2004} definem falha web como a incapacidade de entregar corretamente a informação solicitada e aplicam o modelo de Nelson, $R = 1 - f/n$, a registros de servidores, obtendo confiabilidades entre 94\% e 96\%; \citeonline{goseva2004} estendem a abordagem à sessão como unidade de carga.
+
+Na dimensão temporal, \citeonline{schroeder2006} ajustaram distribuições a cerca de 23 mil falhas em 22 sistemas de alto desempenho, encontrando bom ajuste de Weibull e gama para intervalos entre falhas e \textit{lognormal} para tempos de reparo --- base estatística para a estimação de MTBF e MTTR a partir de dados reais.
+
+\subsection{Latência como manifestação de falha sistêmica}
+
+A fronteira entre funcionamento e falha nem sempre é binária: uma resposta pode ser correta (HTTP 2xx) e ainda assim ser percebida como indisponibilidade quando o tempo de resposta ultrapassa certos limites. Por isso a latência figura entre os \textit{golden signals} do SRE \cite{beyer2016sre} e é incorporada em SLOs que combinam proporção de requisições rápidas e bem-sucedidas \cite{jones2016slo}.
+
+Os limites quantitativos vêm da pesquisa de usabilidade. \citeonline{nielsen1993response} consolidou três limiares perceptuais: 0,1\,s para a sensação de resposta instantânea; 1,0\,s para manter o fluxo de pensamento do usuário; e 10\,s acima dos quais a atenção se dispersa e a tarefa é abandonada. Em serviços web modernos, essas referências fundamentam a adoção de alvos como 200\,ms para o percentil característico de respostas percebidas como rápidas.
+
+Isso justifica tratar atrasos excessivos como falhas efetivas, por meio de $R_{\mathrm{lat}} = 1 - f_{\mathrm{lat}}/n$, em que $f_{\mathrm{lat}}$ conta requisições que excedem o limiar do SLO. Além de falhas pontuais, latências muito grandes costumam ser sintoma sistêmico --- saturação de recursos, contenção de \textit{locks}, filas internas, propagação em cascata ---, cenário em que o rastreamento distribuído \cite{Sigelman2010} permite localizar onde o atraso se origina.
+
+\subsection{Síntese e posicionamento}
+
+Os trabalhos revisados cobrem fragmentos complementares: índices calculados a partir de \textit{logs} sem ajuste de distribuições \cite{tian2004,goseva2004}; ajuste de distribuições a tempos entre falhas sem partir de sinais HTTP \cite{schroeder2006}; e análise de causas sem modelagem estatística \cite{oppenheimer2003}. Este trabalho se posiciona nessa interseção, aplicando $R_{\mathrm{erro}}$, $R_{\mathrm{lat}}$, MTBF e MTTR a sinais HTTP padronizados por OpenTelemetry, com a falha definida por um SLO declarado --- de modo a oferecer um caminho operacional para organizações de médio e pequeno porte limitadas por fornecedores proprietários.
 
 \section{Materiais e Métodos}
 
@@ -105,6 +133,14 @@ A prática voltada à confiabilidade de sistemas web é conhecida como \textit{S
 
 
 \section{Conclusão}
+
+1. Discutir sucesso e desafios desse trabalho. 
+2. Fazer uma análise do que pode ser feito diferente em um trabalho muito parecido 
+3. Ideias para o futuro:
+
+- Tratar desenvolvimento de software como fábricação de componentes
+- Garantir altíssima confiabilidade do que é produzido pela "fábrica de software"
+- Usar medidas de médio-longo prazo para direcionar as melhorias de fluxos automatizados de criação de software.
 
 \section{Declaração de uso de IA}
 
