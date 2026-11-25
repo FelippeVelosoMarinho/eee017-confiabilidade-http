@@ -60,7 +60,13 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
 
   return (
     <form onSubmit={onSubmit}>
-      <FieldSet label="Parâmetros de confiabilidade">
+      <FieldSet label="Padrões de referência da proposta">
+        <p className={s.note}>
+          Estes valores ficam guardados como referência do grupo. Quem decide a conta é cada painel: as opções do
+          painel e, por cima delas, as variáveis do dashboard (<code>$window</code>, <code>$min_req</code>,{' '}
+          <code>$tau_ms</code> ou <code>$tau_s</code>, <code>$slo_erro</code>, <code>$slo_lat</code>,{' '}
+          <code>$modo_falha</code>, <code>$censura_corta</code>, <code>$agrupar</code>). Veja a página Visão geral.
+        </p>
         <Field label="Datasource UID" description="UID do datasource Prometheus com os sinais OpenTelemetry (padrão: webstore-metrics)">
           <Input
             width={40}
@@ -104,6 +110,10 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
 export default AppConfig;
 
 const getStyles = (theme: GrafanaTheme2) => ({
+  note: css`
+    opacity: 0.8;
+    max-width: 720px;
+  `,
   marginTop: css`
     margin-top: ${theme.spacing(2)};
   `,

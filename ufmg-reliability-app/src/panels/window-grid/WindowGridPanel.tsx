@@ -19,12 +19,12 @@ const COR: Record<Cell, string | null> = {
 export function WindowGridPanel({ data, options: painel, width, height, timeZone, replaceVariables }: Props) {
   const styles = useStyles2(getStyles);
   const options = applyOverrides(painel, replaceVariables);
-  const { rows, times } = buildGrid(data, options);
+  const { rows, times, stepMs } = buildGrid(data, options);
 
   if (rows.length === 0) {
     return (
       <div className={styles.empty}>
-        Sem séries. Esperado: 2 queries por componente (total refId A, erros refId B) rotuladas por {options.rowLabel}.
+        Sem séries. Esperado, agrupado pelo rótulo {options.rowLabel}: A = total, B = erros e, se houver, C = latência.
       </div>
     );
   }
@@ -38,7 +38,7 @@ export function WindowGridPanel({ data, options: painel, width, height, timeZone
       <div className={styles.header}>
         {times.length > 0 ? (
           <>
-            <span>{fmt(times[0])}</span>
+            <span>{fmt(stepMs > 0 ? times[0] - stepMs : times[0])}</span>
             <span>→</span>
             <span>{fmt(times[times.length - 1])}</span>
             <span className={styles.spacer} />
@@ -52,7 +52,15 @@ export function WindowGridPanel({ data, options: painel, width, height, timeZone
             <div className={styles.rowLabel} title={row.label}>
               {row.label}
             </div>
-            <RowCanvas cells={row.cells} width={canvasW} height={cellH} label={row.label} times={times} fmt={fmt} />
+            <RowCanvas
+              cells={row.cells}
+              width={canvasW}
+              height={cellH}
+              label={row.label}
+              times={times}
+              stepMs={stepMs}
+              fmt={fmt}
+            />
           </div>
         ))}
       </div>
@@ -62,7 +70,7 @@ export function WindowGridPanel({ data, options: painel, width, height, timeZone
 
 const NOME_ESTADO: Record<Cell, string> = {
   ok: 'cumpriu a meta',
-  bad: 'não cumpriu a meta',
+  bad: 'não cumpriu a meta (erro ou latência, conforme o modo de falha)',
   censored: 'menos requisições que o mínimo',
   empty: 'sem tráfego',
 };
@@ -73,9 +81,10 @@ function RowCanvas(props: {
   height: number;
   label: string;
   times: number[];
+  stepMs: number;
   fmt: (t: number) => string;
 }) {
-  const { cells, width, height, label, times, fmt } = props;
+  const { cells, width, height, label, times, stepMs, fmt } = props;
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -113,7 +122,9 @@ function RowCanvas(props: {
       cells.length - 1,
       Math.max(0, Math.floor(((e.clientX - rect.left) / rect.width) * cells.length))
     );
-    e.currentTarget.title = `${label} — ${fmt(times[i] ?? 0)} — ${NOME_ESTADO[cells[i]]}`;
+    const fim = times[i] ?? 0;
+    const inicio = stepMs > 0 ? fim - stepMs : fim;
+    e.currentTarget.title = `${label} — ${fmt(inicio)} → ${fmt(fim)} — ${NOME_ESTADO[cells[i]]}`;
   };
 
   return <canvas ref={ref} style={{ width, height, display: 'block' }} onMouseMove={onMove} />;
@@ -125,7 +136,7 @@ function Legend() {
     <div className={styles.legend}>
       <LegendDot cls={styles.ok} label="ok" />
       <LegendDot cls={styles.bad} label="falhou" />
-      <LegendDot cls={styles.censored} label="censurada" />
+      <LegendDot cls={styles.censored} label="não julgada (abaixo do mínimo)" />
       <LegendDot cls={styles.emptyCell} label="sem tráfego" />
     </div>
   );

@@ -4,6 +4,17 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { LinkButton, useStyles2 } from '@grafana/ui';
 import { PluginPage } from '@grafana/runtime';
 
+const VARIAVEIS: Array<[string, string, string]> = [
+  ['$window', 'Duração da janela. Vai no intervalo mínimo da consulta, para o passo ser igual à janela', '5m (proposta), 1d (HF)'],
+  ['$min_req', 'Volume mínimo para a janela ser julgada', '100'],
+  ['$tau_ms ou $tau_s', 'τ: acima disso a requisição é lenta', '200 ms'],
+  ['$slo_erro', 'Meta de erro por janela (R*_erro)', '0,99'],
+  ['$slo_lat', 'Meta de latência por janela (R*_lat)', '0,95'],
+  ['$modo_falha', 'ambos, erro ou latencia', 'ambos'],
+  ['$censura_corta', 'Janela não julgada corta o episódio (sim/nao)', 'sim'],
+  ['$agrupar', 'Rótulo das linhas do quadro de janelas', 'server_address, componente, job'],
+];
+
 function OverviewPage() {
   const s = useStyles2(getStyles);
 
@@ -11,59 +22,66 @@ function OverviewPage() {
     <PluginPage>
       <div className={s.root}>
         <p className={s.lead}>
-          Este plugin mostra, em cima dos sinais OpenTelemetry, os índices de confiabilidade
-          descritos na proposta: R_erro, R_lat, disponibilidade A, MTBF e MTTR.
-          Cada medida é calculada por janela de tempo.
+          O plugin calcula, em cima de métricas no formato do OpenTelemetry, os índices de confiabilidade da proposta:
+          R por requisição (modelo de Nelson), disponibilidade em relação ao SLO, MTBF e MTTR. Tudo é calculado por
+          janela de tempo, e os parâmetros mudam conforme o sistema avaliado.
+        </p>
+
+        <h3>De onde vem o dado</h3>
+        <p>
+          <code>fonte → conversor → Prometheus → plugin</code>. O conversor de cada fonte grava o mesmo contrato: o
+          contador <code>http_server_request_duration_seconds_count</code>, o mesmo contador com{' '}
+          <code>error_type</code> para as falhas, e a latência como baldes <code>le</code> ou como percentil da janela.
+          Os painéis recebem três consultas: A = total, B = erros, C = latência.
         </p>
 
         <h3>Critério de falha</h3>
         <p>
-          Uma requisição falha quando o código de resposta é 5xx (modo <em>erro</em>) ou quando
-          sua duração ultrapassa τ (modo <em>lentidão</em>, padrão 200&nbsp;ms). O tempo é dividido
-          em janelas; só entram janelas com volume mínimo (padrão 100 req), para que uma única
-          falha não derrube o índice.
+          Uma requisição falha por erro (5xx, ou o que a fonte marca em <code>error_type</code>) ou por lentidão (duração
+          acima de τ). A janela fica ruim quando R_erro &lt; R*_erro ou R_lat &lt; R*_lat. Janela com menos requisições
+          que o mínimo não é julgada: não conta como boa nem como ruim e, por padrão, separa um episódio do outro.
         </p>
 
         <h3>Índices</h3>
         <ul className={s.list}>
           <li>
-            <strong>I1 — R = 1 − f/n</strong> por janela, no modo erro (<code>R_erro</code>) e no
-            modo lentidão (<code>R_lat</code>). Aproxima a indisponibilidade percebida pelo
-            usuário.
+            <strong>R = 1 − f/n</strong> no período e por janela, nos modos erro e latência.
           </li>
           <li>
-            <strong>I2 — Disponibilidade A</strong>: fração de janelas em que ambos
-            {' '}<code>R_erro ≥ 0,99</code> e <code>R_lat ≥ 0,95</code>. SLOs fixos, declarados
-            antes da coleta.
+            <strong>Disponibilidade A</strong>: janelas boas / janelas julgadas.
           </li>
           <li>
-            <strong>I3 — MTBF e MTTR</strong>: calculados a partir de episódios de janelas ruins
-            consecutivas. MTBF = total de janelas boas / nº de episódios. MTTR = duração média
-            de episódio. Vale a identidade <code>A = MTBF / (MTBF + MTTR)</code>.
+            <strong>MTBF e MTTR</strong>: episódio é um trecho de janelas ruins seguidas. MTBF = janelas boas /
+            episódios; MTTR = janelas ruins / episódios. Vale A = MTBF / (MTBF + MTTR).
           </li>
         </ul>
 
-        <h3>Dataset</h3>
-        <p>
-          O backfill local (2024-01-01 → 2024-02-06, 5000 requisições reais) está em resolução
-          de <strong>1h</strong>. Para a janela de 5&nbsp;min da metodologia, é preciso uma
-          coleta nova com Prometheus coletando em tempo real. O dashboard provisionado usa 1h
-          por padrão.
-        </p>
-
-        <h3>Fontes</h3>
-        <ul className={s.list}>
-          <li><code>docs/proposal/proposal.tex</code> e <code>metodologia.tex</code></li>
-          <li>Motor Python de referência: <code>motor.py</code> (episódios, Weibull)</li>
-          <li>Backfill: <code>data/reliability-backfill/README.md</code></li>
-        </ul>
+        <h3>O que se configura</h3>
+        <p>Variável do dashboard &gt; opção do painel &gt; padrão da proposta.</p>
+        <table className={s.table}>
+          <thead>
+            <tr>
+              <th>Variável</th>
+              <th>O que faz</th>
+              <th>Padrão / exemplo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {VARIAVEIS.map(([v, o, p]) => (
+              <tr key={v}>
+                <td>
+                  <code>{v}</code>
+                </td>
+                <td>{o}</td>
+                <td>{p}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         <div className={s.actions}>
-          <LinkButton icon="apps" href="/dashboards?query=reliability">
-            Abrir dashboard de confiabilidade
-          </LinkButton>
-          <LinkButton icon="cog" variant="secondary" href="/plugins/ufmg-reliability-app">
-            Ajustar SLOs
+          <LinkButton icon="apps" href="/dashboards?query=Confiabilidade">
+            Abrir dashboards de confiabilidade
           </LinkButton>
         </div>
       </div>
@@ -75,7 +93,7 @@ export default OverviewPage;
 
 const getStyles = (theme: GrafanaTheme2) => ({
   root: css`
-    max-width: 820px;
+    max-width: 860px;
     line-height: 1.5;
   `,
   lead: css`
@@ -86,6 +104,17 @@ const getStyles = (theme: GrafanaTheme2) => ({
     padding-left: ${theme.spacing(3)};
     li {
       margin-bottom: ${theme.spacing(1)};
+    }
+  `,
+  table: css`
+    width: 100%;
+    margin-bottom: ${theme.spacing(2)};
+    th,
+    td {
+      padding: ${theme.spacing(0.5, 1)};
+      border-bottom: 1px solid ${theme.colors.border.weak};
+      text-align: left;
+      vertical-align: top;
     }
   `,
   actions: css`
