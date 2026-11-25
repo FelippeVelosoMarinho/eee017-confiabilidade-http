@@ -147,7 +147,13 @@ export function buildWindows(raw: RawSeries, o: EngineOptions, axisTimes?: numbe
   const latFail = !usesP95 && latencyAvailable ? failuresAboveTau(buckets, o.tauMs) : axis.map(() => 0);
 
   const rows = computeWindows(
-    { times: axis, total, errors, latencyFailures: latFail, p95Seconds: usesP95 ? p95 ?? axis.map(() => NaN) : undefined },
+    {
+      times: axis,
+      total,
+      errors,
+      latencyFailures: latFail,
+      p95Seconds: usesP95 ? (p95 ?? axis.map(() => NaN)) : undefined,
+    },
     { sloErro: o.sloErro, sloLat: o.sloLat, minRequests: o.minRequests, tauMs: o.tauMs, latencyAvailable }
   );
   return { rows, stepMs, latencyAvailable };

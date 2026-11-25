@@ -3,7 +3,7 @@ import { createDataFrame, FieldType } from '@grafana/data';
 import { compute } from '../../panels/summary/compute';
 import { DEFAULT_SUMMARY_OPTIONS } from '../../panels/summary/types';
 
-const PROM = process.env.PROM_URL ?? 'http://localhost:9090';
+const PROM = process.env.PROM_PETSHOP_URL ?? 'http://localhost:9091';
 const describeMaybe = process.env.RUN_E2E === '1' ? describe : describe.skip;
 
 function httpGet(url: string): Promise<string> {

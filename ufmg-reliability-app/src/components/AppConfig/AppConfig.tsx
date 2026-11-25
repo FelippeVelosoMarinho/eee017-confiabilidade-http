@@ -30,7 +30,7 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
   const s = useStyles2(getStyles);
   const { enabled, pinned, jsonData } = plugin.meta;
   const [state, setState] = useState<State>({
-    datasourceUid: jsonData?.datasourceUid ?? 'webstore-metrics',
+    datasourceUid: jsonData?.datasourceUid ?? 'huggingface-prom',
     slo_erro: String(jsonData?.slo_erro ?? 0.99),
     slo_lat: String(jsonData?.slo_lat ?? 0.95),
     tau_ms: String(jsonData?.tau_ms ?? 200),
@@ -62,12 +62,15 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
     <form onSubmit={onSubmit}>
       <FieldSet label="Padrões de referência da proposta">
         <p className={s.note}>
-          Estes valores ficam guardados como referência do grupo. Quem decide a conta é cada painel: as opções do
-          painel e, por cima delas, as variáveis do dashboard (<code>$window</code>, <code>$min_req</code>,{' '}
+          Estes valores ficam guardados como referência do grupo. Quem decide a conta é cada painel: as opções do painel
+          e, por cima delas, as variáveis do dashboard (<code>$window</code>, <code>$min_req</code>,{' '}
           <code>$tau_ms</code> ou <code>$tau_s</code>, <code>$slo_erro</code>, <code>$slo_lat</code>,{' '}
           <code>$modo_falha</code>, <code>$censura_corta</code>, <code>$agrupar</code>). Veja a página Visão geral.
         </p>
-        <Field label="Datasource UID" description="UID do datasource Prometheus com os sinais OpenTelemetry (padrão: webstore-metrics)">
+        <Field
+          label="Datasource UID"
+          description="UID do datasource Prometheus com os sinais OpenTelemetry (no lab: huggingface-prom ou petshop-prom)"
+        >
           <Input
             width={40}
             name="datasourceUid"
@@ -77,24 +80,74 @@ const AppConfig = ({ plugin }: AppConfigProps) => {
           />
         </Field>
 
-        <Field label="SLO erro" description="Confiabilidade mínima por janela no modo erro (0–1)" className={s.marginTop}>
-          <Input width={20} name="slo_erro" value={state.slo_erro} data-testid={testIds.appConfig.sloErro} onChange={onChange} />
+        <Field
+          label="SLO erro"
+          description="Confiabilidade mínima por janela no modo erro (0–1)"
+          className={s.marginTop}
+        >
+          <Input
+            width={20}
+            name="slo_erro"
+            value={state.slo_erro}
+            data-testid={testIds.appConfig.sloErro}
+            onChange={onChange}
+          />
         </Field>
 
-        <Field label="SLO latência" description="Fração mínima por janela de requisições abaixo de τ (0–1)" className={s.marginTop}>
-          <Input width={20} name="slo_lat" value={state.slo_lat} data-testid={testIds.appConfig.sloLat} onChange={onChange} />
+        <Field
+          label="SLO latência"
+          description="Fração mínima por janela de requisições abaixo de τ (0–1)"
+          className={s.marginTop}
+        >
+          <Input
+            width={20}
+            name="slo_lat"
+            value={state.slo_lat}
+            data-testid={testIds.appConfig.sloLat}
+            onChange={onChange}
+          />
         </Field>
 
-        <Field label="τ (ms)" description="Limite para a latência percebida como rápida (ex.: 200)" className={s.marginTop}>
-          <Input width={20} name="tau_ms" value={state.tau_ms} data-testid={testIds.appConfig.tauMs} onChange={onChange} />
+        <Field
+          label="τ (ms)"
+          description="Limite para a latência percebida como rápida (ex.: 200)"
+          className={s.marginTop}
+        >
+          <Input
+            width={20}
+            name="tau_ms"
+            value={state.tau_ms}
+            data-testid={testIds.appConfig.tauMs}
+            onChange={onChange}
+          />
         </Field>
 
-        <Field label="Janela" description="Duração da janela de agregação (formato Prom range, ex.: 5m, 15m, 1h)" className={s.marginTop}>
-          <Input width={20} name="window" value={state.window} data-testid={testIds.appConfig.window} onChange={onChange} />
+        <Field
+          label="Janela"
+          description="Duração da janela de agregação (formato Prom range, ex.: 5m, 15m, 1h)"
+          className={s.marginTop}
+        >
+          <Input
+            width={20}
+            name="window"
+            value={state.window}
+            data-testid={testIds.appConfig.window}
+            onChange={onChange}
+          />
         </Field>
 
-        <Field label="Volume mínimo" description="Mínimo de requisições para a janela entrar na amostra" className={s.marginTop}>
-          <Input width={20} name="min_requests" value={state.min_requests} data-testid={testIds.appConfig.minRequests} onChange={onChange} />
+        <Field
+          label="Volume mínimo"
+          description="Mínimo de requisições para a janela entrar na amostra"
+          className={s.marginTop}
+        >
+          <Input
+            width={20}
+            name="min_requests"
+            value={state.min_requests}
+            data-testid={testIds.appConfig.minRequests}
+            onChange={onChange}
+          />
         </Field>
 
         <div className={s.marginTop}>

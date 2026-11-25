@@ -50,10 +50,7 @@ describe('histograma acumulado', () => {
 describe('dado incoerente', () => {
   it('erros maiores que o total são marcados', () => {
     const times = [0, 1];
-    const built = buildWindows(
-      { total: { times, values: [100, 100] }, errors: { times, values: [116, 0] } },
-      base
-    );
+    const built = buildWindows({ total: { times, values: [100, 100] }, errors: { times, values: [116, 0] } }, base);
     const s = summarize(built, base);
     expect(s.inconsistent).toBe(1);
   });

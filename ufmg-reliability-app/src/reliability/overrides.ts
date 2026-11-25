@@ -30,7 +30,7 @@ const MODOS: Record<string, 'both' | 'error' | 'latency'> = {
   erro: 'error',
   error: 'error',
   latencia: 'latency',
-  'latência': 'latency',
+  latência: 'latency',
   latency: 'latency',
 };
 

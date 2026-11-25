@@ -17,8 +17,8 @@ export function SummaryPanel({ data, options: painel, replaceVariables }: Props)
   if (!s.hasData) {
     return (
       <div className={styles.empty}>
-        Sem dados. O painel espera A = total de requisições, B = requisições com erro e, se houver, C = latência
-        (baldes <code>le</code> ou percentil da janela).
+        Sem dados. O painel espera A = total de requisições, B = requisições com erro e, se houver, C = latência (baldes{' '}
+        <code>le</code> ou percentil da janela).
       </div>
     );
   }
@@ -54,7 +54,13 @@ export function SummaryPanel({ data, options: painel, replaceVariables }: Props)
         <Stat
           label="R latência (período)"
           value={fmtPct(s.rLat)}
-          hint={s.latencyAvailable ? (options.latencyMode === 'p95' ? 'por percentil, sem R' : `até ${options.tauMs} ms`) : 'sem série de latência'}
+          hint={
+            s.latencyAvailable
+              ? options.latencyMode === 'p95'
+                ? 'por percentil, sem R'
+                : `até ${options.tauMs} ms`
+              : 'sem série de latência'
+          }
         />
       </div>
       <div className={styles.params}>{describeParams(options, s.effectiveMode, win)}</div>

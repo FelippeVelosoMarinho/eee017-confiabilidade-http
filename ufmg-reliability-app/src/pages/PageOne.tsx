@@ -5,7 +5,11 @@ import { LinkButton, useStyles2 } from '@grafana/ui';
 import { PluginPage } from '@grafana/runtime';
 
 const VARIAVEIS: Array<[string, string, string]> = [
-  ['$window', 'Duração da janela. Vai no intervalo mínimo da consulta, para o passo ser igual à janela', '5m (proposta), 1d (HF)'],
+  [
+    '$window',
+    'Duração da janela. Vai no intervalo mínimo da consulta, para o passo ser igual à janela',
+    '5m (proposta), 1d (HF)',
+  ],
   ['$min_req', 'Volume mínimo para a janela ser julgada', '100'],
   ['$tau_ms ou $tau_s', 'τ: acima disso a requisição é lenta', '200 ms'],
   ['$slo_erro', 'Meta de erro por janela (R*_erro)', '0,99'],
@@ -22,24 +26,25 @@ function OverviewPage() {
     <PluginPage>
       <div className={s.root}>
         <p className={s.lead}>
-          O plugin calcula, em cima de métricas no formato do OpenTelemetry, os índices de confiabilidade da proposta:
-          R por requisição (modelo de Nelson), disponibilidade em relação ao SLO, MTBF e MTTR. Tudo é calculado por
-          janela de tempo, e os parâmetros mudam conforme o sistema avaliado.
+          O plugin calcula, em cima de métricas no formato do OpenTelemetry, os índices de confiabilidade da proposta: R
+          por requisição (modelo de Nelson), disponibilidade em relação ao SLO, MTBF e MTTR. Tudo é calculado por janela
+          de tempo, e os parâmetros mudam conforme o sistema avaliado.
         </p>
 
         <h3>De onde vem o dado</h3>
         <p>
           <code>fonte → conversor → Prometheus → plugin</code>. O conversor de cada fonte grava o mesmo contrato: o
-          contador <code>http_server_request_duration_seconds_count</code>, o mesmo contador com{' '}
-          <code>error_type</code> para as falhas, e a latência como baldes <code>le</code> ou como percentil da janela.
-          Os painéis recebem três consultas: A = total, B = erros, C = latência.
+          contador <code>http_server_request_duration_seconds_count</code>, o mesmo contador com <code>error_type</code>{' '}
+          para as falhas, e a latência como baldes <code>le</code> ou como percentil da janela. Os painéis recebem três
+          consultas: A = total, B = erros, C = latência.
         </p>
 
         <h3>Critério de falha</h3>
         <p>
-          Uma requisição falha por erro (5xx, ou o que a fonte marca em <code>error_type</code>) ou por lentidão (duração
-          acima de τ). A janela fica ruim quando R_erro &lt; R*_erro ou R_lat &lt; R*_lat. Janela com menos requisições
-          que o mínimo não é julgada: não conta como boa nem como ruim e, por padrão, separa um episódio do outro.
+          Uma requisição falha por erro (5xx, ou o que a fonte marca em <code>error_type</code>) ou por lentidão
+          (duração acima de τ). A janela fica ruim quando R_erro &lt; R*_erro ou R_lat &lt; R*_lat. Janela com menos
+          requisições que o mínimo não é julgada: não conta como boa nem como ruim e, por padrão, separa um episódio do
+          outro.
         </p>
 
         <h3>Índices</h3>
