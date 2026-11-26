@@ -1,0 +1,27 @@
+{
+  "descricao": "mindweave/web-server-logs (Hugging Face), amostra gratuita: access_logs.csv, 5.000 requisições de 01/01 a 06/02/2024",
+  "colunas": {
+    "tempo": "timestamp",
+    "duracao": "response_time_ms"
+  },
+  "formato_tempo": "%Y-%m-%d %H:%M:%S",
+  "unidade_duracao": "ms",
+  "erro": {
+    "coluna": "status_code",
+    "regex": "^5",
+    "observacao": "Erro = código 5xx, como na proposta. 4xx e 3xx não contam."
+  },
+  "rotulos": {
+    "server_address": "server_id",
+    "http_route": "path",
+    "http_response_status_code": "status_code"
+  },
+  "mapas": {
+    "server_id": { "1": "web-prod-01", "2": "web-prod-02", "3": "web-prod-03" }
+  },
+  "rotulos_fixos": {
+    "job": "huggingface-web-server-logs"
+  },
+  "baldes_segundos": [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.75, 1, 2.5, 5, 7.5, 10],
+  "observacao_baldes": "Baldes recomendados pelo OTel mais 0.15, 0.2, 0.3, 0.35 e 0.4: com τ = 200 ms caindo exatamente num balde, a conta de lentidão é exata, e os outros valores servem para a análise de sensibilidade de τ."
+}

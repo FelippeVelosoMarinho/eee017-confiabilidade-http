@@ -1,0 +1,13 @@
+apiVersion: 1
+
+apps:
+  - type: 'ufmg-reliability-app'
+    org_id: 1
+    disabled: false
+    jsonData:
+      datasourceUid: huggingface-prom
+      slo_erro: 0.99
+      slo_lat: 0.95
+      tau_ms: 200
+      window: 1d
+      min_requests: 100

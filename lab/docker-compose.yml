@@ -1,0 +1,49 @@
+# Lab completo: os dois casos convertidos para o formato OTel, cada um no seu Prometheus,
+# e um Grafana com o plugin e os dois dashboards.
+#
+#   cd lab && docker compose up --build
+#   Grafana:                http://localhost:3000  (sem senha)
+#   Prometheus Hugging Face http://localhost:9090
+#   Prometheus PetShop      http://localhost:9091
+name: confiabilidade-eee017
+
+services:
+  prometheus-huggingface:
+    build:
+      context: ..
+      dockerfile: lab/prometheus-huggingface.Dockerfile
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/tsdb
+      - --storage.tsdb.retention.time=3650d
+      # O conversor grava uma amostra só quando o contador muda. Com o lookback longo,
+      # o valor do contador em qualquer instante é o da última amostra (exato).
+      - --query.lookback-delta=60d
+    ports:
+      - "9090:9090"
+
+  prometheus-petshop:
+    build:
+      context: ..
+      dockerfile: lab/prometheus-petshop.Dockerfile
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/tsdb
+      - --storage.tsdb.retention.time=3650d
+    ports:
+      - "9091:9090"
+
+  grafana:
+    build:
+      context: ..
+      dockerfile: lab/grafana.Dockerfile
+    depends_on:
+      - prometheus-huggingface
+      - prometheus-petshop
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/plugins:/etc/grafana/provisioning/plugins:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../ufmg-reliability-app/provisioning/dashboards/ufmg:/var/lib/grafana/dashboards:ro

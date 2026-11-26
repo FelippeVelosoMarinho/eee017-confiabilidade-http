@@ -1,0 +1,1070 @@
+{
+  "title": "Confiabilidade — Hugging Face (web-server-logs)",
+  "uid": "huggingface-confiabilidade",
+  "description": "Índices da proposta sobre o access_logs sintético do conjunto mindweave/web-server-logs. Gabarito: casos/huggingface/relatorio-logs-huggingface.pdf.",
+  "tags": [
+    "confiabilidade",
+    "eee017",
+    "huggingface"
+  ],
+  "timezone": "utc",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "2024-01-01T00:00:00.000Z",
+    "to": "2024-02-07T00:00:00.000Z"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "type": "datasource",
+        "label": "Datasource",
+        "query": "prometheus",
+        "regex": "",
+        "current": {
+          "selected": true,
+          "text": "Prometheus (Hugging Face)",
+          "value": "huggingface-prom"
+        },
+        "hide": 0,
+        "refresh": 1,
+        "skipUrlSync": false
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "label": "Janela",
+        "description": "Duração de cada janela. Também é o passo da consulta. A proposta previa 5 min para um serviço movimentado; com ~137 requisições por dia, o relatório do HF usou 24 h.",
+        "query": "5m : 5m,1h : 1h,6h : 6h,12h : 12h,1d (relatório) : 1d",
+        "current": {
+          "selected": true,
+          "text": "1d (relatório)",
+          "value": "1d"
+        },
+        "options": [
+          {
+            "text": "5m",
+            "value": "5m",
+            "selected": false
+          },
+          {
+            "text": "1h",
+            "value": "1h",
+            "selected": false
+          },
+          {
+            "text": "6h",
+            "value": "6h",
+            "selected": false
+          },
+          {
+            "text": "12h",
+            "value": "12h",
+            "selected": false
+          },
+          {
+            "text": "1d (relatório)",
+            "value": "1d",
+            "selected": true
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "min_req",
+        "type": "custom",
+        "label": "Mínimo de requisições",
+        "description": "Janela com menos requisições não é julgada.",
+        "query": "1 : 1,10 : 10,50 : 50,100 (proposta) : 100",
+        "current": {
+          "selected": true,
+          "text": "100 (proposta)",
+          "value": "100"
+        },
+        "options": [
+          {
+            "text": "1",
+            "value": "1",
+            "selected": false
+          },
+          {
+            "text": "10",
+            "value": "10",
+            "selected": false
+          },
+          {
+            "text": "50",
+            "value": "50",
+            "selected": false
+          },
+          {
+            "text": "100 (proposta)",
+            "value": "100",
+            "selected": true
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": true
+      },
+      {
+        "name": "tau_s",
+        "type": "custom",
+        "label": "τ",
+        "description": "Limite de requisição lenta. Só valores que existem como balde do histograma (ver conversores/configs/huggingface.json).",
+        "query": "150 ms : 0.15,200 ms (proposta) : 0.2,250 ms : 0.25,300 ms : 0.3,350 ms : 0.35,400 ms : 0.4,500 ms : 0.5",
+        "current": {
+          "selected": true,
+          "text": "200 ms (proposta)",
+          "value": "0.2"
+        },
+        "options": [
+          {
+            "text": "150 ms",
+            "value": "0.15",
+            "selected": false
+          },
+          {
+            "text": "200 ms (proposta)",
+            "value": "0.2",
+            "selected": true
+          },
+          {
+            "text": "250 ms",
+            "value": "0.25",
+            "selected": false
+          },
+          {
+            "text": "300 ms",
+            "value": "0.3",
+            "selected": false
+          },
+          {
+            "text": "350 ms",
+            "value": "0.35",
+            "selected": false
+          },
+          {
+            "text": "400 ms",
+            "value": "0.4",
+            "selected": false
+          },
+          {
+            "text": "500 ms",
+            "value": "0.5",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "slo_erro",
+        "type": "custom",
+        "label": "Meta de erro",
+        "description": "R*_erro por janela.",
+        "query": "95% : 0.95,98% : 0.98,99% (proposta) : 0.99,99.5% : 0.995",
+        "current": {
+          "selected": true,
+          "text": "99% (proposta)",
+          "value": "0.99"
+        },
+        "options": [
+          {
+            "text": "95%",
+            "value": "0.95",
+            "selected": false
+          },
+          {
+            "text": "98%",
+            "value": "0.98",
+            "selected": false
+          },
+          {
+            "text": "99% (proposta)",
+            "value": "0.99",
+            "selected": true
+          },
+          {
+            "text": "99.5%",
+            "value": "0.995",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "slo_lat",
+        "type": "custom",
+        "label": "Meta de latência",
+        "description": "R*_lat: fração mínima de requisições até τ por janela.",
+        "query": "75% : 0.75,90% : 0.9,95% (proposta) : 0.95,99% : 0.99",
+        "current": {
+          "selected": true,
+          "text": "95% (proposta)",
+          "value": "0.95"
+        },
+        "options": [
+          {
+            "text": "75%",
+            "value": "0.75",
+            "selected": false
+          },
+          {
+            "text": "90%",
+            "value": "0.9",
+            "selected": false
+          },
+          {
+            "text": "95% (proposta)",
+            "value": "0.95",
+            "selected": true
+          },
+          {
+            "text": "99%",
+            "value": "0.99",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "censura_corta",
+        "type": "custom",
+        "label": "Janela não julgada corta episódio",
+        "description": "Sim: trechos ruins separados por uma janela sem o mínimo de requisições contam como episódios diferentes.",
+        "query": "sim (relatório) : 1,não : 0",
+        "current": {
+          "selected": true,
+          "text": "sim (relatório)",
+          "value": "1"
+        },
+        "options": [
+          {
+            "text": "sim (relatório)",
+            "value": "1",
+            "selected": true
+          },
+          {
+            "text": "não",
+            "value": "0",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "agrupar",
+        "type": "custom",
+        "label": "Linhas do quadro",
+        "description": "Rótulo que vira uma linha do quadro de janelas.",
+        "query": "serviço inteiro : job,servidor : server_address,rota : http_route",
+        "current": {
+          "selected": true,
+          "text": "serviço inteiro",
+          "value": "job"
+        },
+        "options": [
+          {
+            "text": "serviço inteiro",
+            "value": "job",
+            "selected": true
+          },
+          {
+            "text": "servidor",
+            "value": "server_address",
+            "selected": false
+          },
+          {
+            "text": "rota",
+            "value": "http_route",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
+      },
+      {
+        "name": "server_address",
+        "type": "query",
+        "label": "Servidor",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "query": {
+          "query": "label_values(http_server_request_duration_seconds_count, server_address)",
+          "refId": "server_address"
+        },
+        "definition": "label_values(http_server_request_duration_seconds_count, server_address)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "http_route",
+        "type": "query",
+        "label": "Rota",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "query": {
+          "query": "label_values(http_server_request_duration_seconds_count, http_route)",
+          "refId": "http_route"
+        },
+        "definition": "label_values(http_server_request_duration_seconds_count, http_route)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "Índices no período (janela $window, mínimo $min_req requisições, τ = ${tau_s:text}, metas ${slo_erro:text} e ${slo_lat:text})",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "ufmg-reliability-summary-panel",
+      "title": "Só erro (5xx)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) + 0 * ($min_req + $tau_s + $slo_erro + $slo_lat + $censura_corta)",
+          "legendFormat": "total acumulado",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"})",
+          "legendFormat": "le={{le}}",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 0,
+        "countMode": "cumulative",
+        "latencyMode": "histogram",
+        "failureMode": "error",
+        "censoredBreaksEpisode": true,
+        "availabilityTarget": 0.99
+      }
+    },
+    {
+      "id": 2,
+      "type": "ufmg-reliability-summary-panel",
+      "title": "Só latência (até τ)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) + 0 * ($min_req + $tau_s + $slo_erro + $slo_lat + $censura_corta)",
+          "legendFormat": "total acumulado",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"})",
+          "legendFormat": "le={{le}}",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 0,
+        "countMode": "cumulative",
+        "latencyMode": "histogram",
+        "failureMode": "latency",
+        "censoredBreaksEpisode": true,
+        "availabilityTarget": 0.99
+      }
+    },
+    {
+      "id": 3,
+      "type": "ufmg-reliability-summary-panel",
+      "title": "Erro ou latência (definição da proposta)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) + 0 * ($min_req + $tau_s + $slo_erro + $slo_lat + $censura_corta)",
+          "legendFormat": "total acumulado",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"})",
+          "legendFormat": "erros acumulados",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"})",
+          "legendFormat": "le={{le}}",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "windowSeconds": 0,
+        "countMode": "cumulative",
+        "latencyMode": "histogram",
+        "failureMode": "both",
+        "censoredBreaksEpisode": true,
+        "availabilityTarget": 0.99
+      }
+    },
+    {
+      "id": 101,
+      "type": "row",
+      "title": "Onde e quando a janela sai do objetivo",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "panels": []
+    },
+    {
+      "id": 4,
+      "type": "ufmg-reliability-window-grid-panel",
+      "title": "Quadro de janelas por ${agrupar:text}: verde = dentro das duas metas, vermelho = fora, cinza = abaixo de $min_req requisições",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by ($agrupar) (http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) + 0 * ($min_req + $tau_s + $slo_erro + $slo_lat + $censura_corta)",
+          "legendFormat": "{{$agrupar}} total",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by ($agrupar) (http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"})",
+          "legendFormat": "{{$agrupar}} erros",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by ($agrupar, le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"})",
+          "legendFormat": "{{$agrupar}} le={{le}}",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "sloErro": 0.99,
+        "sloLat": 0.95,
+        "tauMs": 200,
+        "minRequests": 100,
+        "rowLabel": "job",
+        "countMode": "cumulative",
+        "latencyMode": "histogram",
+        "failureMode": "both",
+        "hideUnjudged": false
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Requisições por janela e o mínimo",
+      "description": "Volume de cada janela, pela diferença do contador acumulado. Abaixo da linha, a janela não é julgada.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "(sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) - sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"} offset $window))",
+          "legendFormat": "requisições",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "vector($min_req)",
+          "legendFormat": "mínimo",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepBefore",
+            "showPoints": "always",
+            "pointSize": 4,
+            "spanNulls": false
+          },
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "meta.*|mínimo.*|τ"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Percentil 95 da duração por janela e τ",
+      "description": "Interpolado entre baldes do histograma: serve para ver a ordem de grandeza, não entra no índice.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"}) - sum by (le) (http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\"} offset $window))",
+          "legendFormat": "p95",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "vector($tau_s)",
+          "legendFormat": "τ",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepBefore",
+            "showPoints": "always",
+            "pointSize": 4,
+            "spanNulls": false
+          },
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "meta.*|mínimo.*|τ"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "R_erro por janela = 1 − 5xx / total",
+      "description": "Inclui janelas abaixo do mínimo: o julgamento está no quadro e nos índices.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "1 - (sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"}) - sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\",error_type!=\"\"} offset $window)) / (sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) - sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"} offset $window))",
+          "legendFormat": "R_erro",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "vector($slo_erro)",
+          "legendFormat": "meta de erro",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepBefore",
+            "showPoints": "always",
+            "pointSize": 4,
+            "spanNulls": false
+          },
+          "max": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "meta.*|mínimo.*|τ"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "R_lat por janela = fração até τ",
+      "description": "Conta exata pelo balde le = τ.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "interval": "$window",
+      "maxDataPoints": 11000,
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "(sum(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\",le=\"$tau_s\"}) - sum(http_server_request_duration_seconds_bucket{server_address=~\"$server_address\",http_route=~\"$http_route\",le=\"$tau_s\"} offset $window)) / (sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"}) - sum(http_server_request_duration_seconds_count{server_address=~\"$server_address\",http_route=~\"$http_route\"} offset $window))",
+          "legendFormat": "R_lat",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "vector($slo_lat)",
+          "legendFormat": "meta de latência",
+          "range": true,
+          "instant": false,
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepBefore",
+            "showPoints": "always",
+            "pointSize": 4,
+            "spanNulls": false
+          },
+          "max": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "meta.*|mínimo.*|τ"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "PetShop",
+      "type": "dashboards",
+      "tags": [
+        "petshop"
+      ],
+      "asDropdown": false,
+      "icon": "external link"
+    }
+  ]
+}

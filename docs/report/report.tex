@@ -26,6 +26,7 @@
 \setlength{\parindent}{1.25cm}
 
 \usepackage{booktabs}
+\usepackage{graphicx}
 
 % Numeração de página no canto superior direito (ABNT)
 \usepackage{fancyhdr}
@@ -74,90 +75,87 @@
 \textbf{RESUMO}
 \end{center}
 \begin{spacing}{1.0}
-\noindent
+\noindent Sistemas de software conectados à internet produzem grande volume de dados de monitoramento, mas a análise de confiabilidade a partir desses dados ainda exige ferramentas caras e conhecimento especializado, o que dificulta sua adoção por empresas de menor porte. Este trabalho avalia a confiabilidade de serviços web a partir de sinais HTTP no padrão OpenTelemetry, com o cálculo feito por um plugin para Grafana desenvolvido pelo grupo, e define como falha a violação de um objetivo de nível de serviço declarado antes da inspeção dos dados, que exige ao menos 99\% de requisições sem erro 5xx e 95\% delas respondidas em até 200\,ms. A partir dessa regra, foram estimados a confiabilidade por requisição, a disponibilidade, o MTBF e o MTTR em duas séries públicas, um \textit{access log} sintético de servidor HTTP e as métricas do PetSite, o \textit{front-end} da aplicação de microsserviços PetShop. No \textit{access log}, o volume só permitiu julgar janelas diárias, e o serviço falhou nos dois critérios, com confiabilidade de erro de 97,8\% e nenhum dia dentro do objetivo de latência, além de episódios delimitados pela falta de dados nos fins de semana, e não por recuperação. No PetSite, o serviço cumpriu a meta de erro em todos os cenários, com intervalos de confiança acima de 99\%, e saiu do objetivo em episódios curtos, com MTTR entre 5,6 e 8,5 minutos e tempo entre falhas melhor descrito por uma Weibull com parâmetro de forma 0,81, embora sem significância a 5\%, enquanto o limiar de 200\,ms deixou a série inteira fora do objetivo de latência e só os cortes de 400\,ms e 500\,ms revelaram episódios discretos de lentidão. Os resultados mostram que a mesma regra produz leituras coerentes em séries de naturezas distintas, desde que a janela de julgamento seja compatível com o volume de requisições e que o limiar de latência respeite a camada medida.
 
 \vspace{0.5cm}
-\noindent\textbf{Palavras-chave:} palavra1; palavra2; palavra3.
+\noindent\textbf{Palavras-chave:} confiabilidade de software; OpenTelemetry; objetivo de nível de serviço; MTBF; MTTR; Weibull.
 \end{spacing}
 
 \vspace{1cm}
 
 \section{Introdução}
 
-Desde a explosão das tecnologias de núvem da década de 2010 a grande maioria dos sistemas de software modernos tem mantido conexão a internet garantindo diversas vantágens da conectividade, ente elas estão o monitoramento e a fácil reparablidade. O resultado da engenhara de software é invisível e em algumas vezes inacessível. Por isso, de aplicações de software é uma das bases para evoluir produtos conectados a internet de forma assertiva e proativa. 
+Desde a expansão das tecnologias de nuvem na década de 2010, a grande maioria dos sistemas de software modernos mantém conexão à internet, o que traz diversas vantagens associadas à conectividade, entre elas o monitoramento contínuo e a facilidade de reparo. O resultado da engenharia de software é, em grande medida, invisível e por vezes inacessível ao usuário final, e por isso a medição sistemática de aplicações é uma das bases para evoluir produtos conectados à internet de forma assertiva e proativa.
 
-Pela ótica da engenharia de confiablilidade softwares são um desafio interessante, o custo de reparo é baixo, o impacto de uma falha pode ser global e há quantidades astronômicas de dados de comportamento e falhas em sites onde o monitoramento é feito de maneira adequada. 
-Há relato
+Pela ótica da engenharia de confiabilidade, sistemas de software constituem um objeto de estudo particular, pois o custo de reparo é relativamente baixo, o impacto de uma falha pode ter alcance global e há volumes expressivos de dados sobre comportamento e falhas nos sítios em que o monitoramento é feito de maneira adequada. Contudo, análises aprofundadas de confiabilidade ainda têm custo elevado, sobretudo pelo conhecimento especializado exigido para que avaliações personalizadas e realistas sejam implementadas em empresas de pequeno e médio porte.
 
-Contudo análises aprofundadas da confiabilidade de softwares ainda são caros devido ao alto custo de conhecimento necessário para que análises personalizadas e mais realistas sejam implementadas em empresas de pequeno e médio porte. 
+O conceito de observabilidade tem origem na teoria de controle, na qual \citeonline{KALMAN1960491} define um sistema como observável quando seu estado interno pode ser reconstruído a partir das saídas medidas. Essa ideia se aplica bem aos sistemas de software, cujo estado só pode ser conhecido pelo que eles emitem, e por isso a medição do que ocorre em processos digitais permanece a melhor forma de lidar com a natureza intangível desses sistemas. No âmbito de aplicações digitais, a forma de medição mais primitiva ainda em uso é o \textit{log}, que consiste em uma cadeia de caracteres emitida na ocorrência de um evento. Como restringir a observação de sistemas de software a essa estrutura é impraticável em arquiteturas distribuídas ou com alta taxa de uso, engenheiros da área passaram a combinar métricas com o rastreamento distribuído por \textit{traces} \cite{Sigelman2010}, o que amplia a capacidade de monitoramento, mas também eleva seu custo e sua complexidade. O OpenTelemetry é a especificação aberta que padroniza esses três sinais, métricas, \textit{traces} e \textit{logs}, para que ferramentas diferentes descrevam o mesmo evento no mesmo formato \cite{otel_site}.
 
-A base teórica para a organização e controle de sistemas automatizados de comunicação existe desde a metade do século passado \cite{KALMAN1960491} . A medição do que acontece em processos digitais é a melhor forma de lidar com a natureza intangível de sistemas de software. 
-
-No ambito de aplicativos digitais a forma de medição mais primitiva ainda em uso é o log, que consiste em uma cadeia de caractéres emitida na ocorrência de um evento. Contudo, restringir a medição de sistemas de software somente a essa estrutura é impraticável para sistemas distribuídos ou com alta taxa de uso. Para tanto a estrutura de traces e métricas 
+Em organizações menores e com menos recursos, esse custo e essa complexidade constituem uma barreira. A pesquisa de \citeonline{bowen2021} com dez empresas mostra que cada uma delas montou o próprio fluxo de coleta e análise de \textit{traces}, com compromissos distintos entre funcionalidade, capacidade e custo, o que sugere que a adoção efetiva dessas ferramentas exige um investimento difícil de sustentar em empresas de menor porte, mesmo diante da crescente demanda dos consumidores por sistemas de software mais confiáveis. Nesse contexto, este trabalho propõe o desenvolvimento de ferramentas de análise de confiabilidade de software baseadas em padrões, ferramentas e dados abertos.
 
 \section{Revisão de Literatura}
 
-A avaliação da confiabilidade de software é pesquisada em comunidades distintas --- dependabilidade, observabilidade de sistemas distribuídos e \textit{Site Reliability Engineering} (SRE) ---, cujas contribuições esta seção organiza em torno da avaliação quantitativa a partir de sinais padronizados por OpenTelemetry.
+A avaliação da confiabilidade de software é pesquisada em comunidades distintas, como as de dependabilidade, de observabilidade de sistemas distribuídos e de \textit{Site Reliability Engineering} (SRE), e esta seção organiza suas contribuições em torno da avaliação quantitativa a partir de sinais padronizados por OpenTelemetry.
 
 \subsection{Confiabilidade e software}
 
-\citeonline{Avizienis2004} consolidam a taxonomia de \textit{dependability}, distinguindo falta, erro e falha --- distinção essencial em serviços distribuídos, nos quais um evento pode ser invisível no componente e manifesto como falha na borda. Métodos quantitativos clássicos como modelagem de tempos entre falhas e estimação de MTBF e MTTR \cite{oconnor2012,ruijters2015} são aplicáveis a software desde que haja uma definição operacional de falha.
+\citeonline{Avizienis2004} consolidam a taxonomia de \textit{dependability} e distinguem falta, erro e falha, distinção essencial em serviços distribuídos, nos quais um evento pode ser invisível no componente e ainda assim se manifestar como falha na borda. Métodos quantitativos clássicos, como a modelagem de tempos entre falhas e a estimação do tempo médio entre falhas (MTBF, \textit{mean time between failures}) e do tempo médio de reparo (MTTR, \textit{mean time to repair}) \cite{oconnor2012}, aplicam-se a software desde que haja uma definição operacional de falha. O MTBF mede quanto tempo o sistema permanece em funcionamento entre uma falha e a seguinte, e o MTTR mede quanto tempo leva para voltar a funcionar depois que falhou.
 
-Sobre essa base, a prática de SRE \cite{google_sre,beyer2016sre} trata a confiabilidade como meta organizacional e a operacionaliza por indicadores (SLI) e objetivos (SLO) de nível de serviço \cite{jones2016slo}, com a proporção de requisições bem-sucedidas servindo de aproximação para a indisponibilidade não planejada \cite{alvidrez2016risk}. No Brasil, essa prática ainda é pouco adotada fora de grandes empresas, em função do custo de ferramentas proprietárias de monitoramento.
+Sobre essa base, a prática de SRE \cite{beyer2016sre} trata a confiabilidade como meta organizacional e a operacionaliza por dois artefatos \cite{jones2016slo}. O indicador de nível de serviço (SLI, \textit{service level indicator}) é a medida observada, por exemplo a fração de requisições bem-sucedidas. O objetivo de nível de serviço (SLO, \textit{service level objective}) é a meta numérica declarada para esse indicador, por exemplo 99\% de sucesso. A proporção de requisições bem-sucedidas serve de aproximação da indisponibilidade não planejada \cite{alvidrez2016risk}. A adoção dessa prática, porém, cai com o porte da empresa, já que, na pesquisa da Grafana Labs de 2023, 40\% das empresas com mais de 5.000 funcionários usavam SLIs e SLOs, contra apenas 15\% das empresas com até 10 funcionários \cite{grafana2023survey}. No Brasil, a versão local da mesma pesquisa, respondida por 127 participantes de um evento do setor em São Paulo, aponta uso de SLOs por 93\% dos respondentes, mas reúne profissionais já envolvidos com observabilidade, e mesmo nessa amostra o custo é o critério mais citado na escolha de ferramentas, por 77\% dos participantes, enquanto 12\% das organizações declaram não ter nenhuma prática de observabilidade, contra 4\% no resultado global \cite{grafana2025brasil}.
 
 \subsection{Observabilidade de sistemas distribuídos}
 
-A operacionalização da confiabilidade depende de instrumentação adequada. Os três sinais canônicos --- métricas, \textit{traces} e \textit{logs} --- foram consolidados a partir do Dapper \cite{Sigelman2010}, que mostrou como o rastreamento distribuído reconstrói o caminho de uma requisição entre serviços; \citeonline{10967524} oferecem revisão e taxonomia atualizadas sobre o tema em microsserviços.
+A operacionalização da confiabilidade depende de instrumentação adequada. Entre os três sinais canônicos, que são as métricas, os \textit{traces} e os \textit{logs}, o rastreamento distribuído ganhou forma com o Dapper \cite{Sigelman2010}, que mostrou como reconstruir o caminho de uma requisição entre serviços, enquanto \citeonline{10967524} oferecem uma revisão e uma taxonomia atualizadas sobre o tema em microsserviços.
 
-Apesar da padronização, a análise ainda é limitada. \citeonline{semish} mostram que a sobrecarga de coleta com OpenTelemetry é administrável, deslocando o custo para armazenamento e uso efetivo dos dados; \citeonline{bowen2021} corroboram, em pesquisa com dez empresas, que a análise dos dados coletados se apoia predominantemente em visualizações e métricas simples, com uso raro de aprendizado de máquina. Esse descompasso entre coleta e análise constitui uma lacuna prática que motiva ferramentas de cálculo direto de índices de confiabilidade sobre os sinais padronizados.
+Apesar da padronização, a análise ainda é limitada. \citeonline{semish} mostram que a sobrecarga de coleta com OpenTelemetry é administrável, o que desloca o custo para o armazenamento e o uso efetivo dos dados, e \citeonline{bowen2021}, na pesquisa com dez empresas, observam que a análise dos dados coletados se apoia predominantemente em visualizações e métricas simples, com uso raro de aprendizado de máquina. Esse descompasso entre coleta e análise constitui uma lacuna prática que motiva ferramentas de cálculo direto de índices de confiabilidade sobre os sinais padronizados.
 
 \subsection{Modelagem de falhas em sistemas web}
 
-A confiabilidade de serviços deve considerar as falhas percebidas pelos usuários. \citeonline{oppenheimer2003} analisaram falhas de três grandes serviços de Internet, distinguindo falhas de componentes de falhas de serviço, e identificaram o erro de operador como maior causa. \citeonline{tian2004} definem falha web como a incapacidade de entregar corretamente a informação solicitada e aplicam o modelo de Nelson, $R = 1 - f/n$, a registros de servidores, obtendo confiabilidades entre 94\% e 96\%; \citeonline{goseva2004} estendem a abordagem à sessão como unidade de carga.
+A confiabilidade de serviços deve considerar as falhas percebidas pelos usuários. \citeonline{oppenheimer2003} analisaram falhas de três grandes serviços de Internet, distinguindo falhas de componentes de falhas de serviço, e identificaram o erro de operador como a maior causa em dois deles. \citeonline{tian2004} definem falha web como a incapacidade de entregar corretamente a informação solicitada e aplicam o modelo de Nelson, $R = 1 - f/n$, a registros de servidores, obtendo confiabilidades por requisição de 96,2\% e 94,2\% nos dois sites analisados, e \citeonline{goseva2004} estendem a abordagem à sessão como unidade de carga.
 
-Na dimensão temporal, \citeonline{schroeder2006} ajustaram distribuições a cerca de 23 mil falhas em 22 sistemas de alto desempenho, encontrando bom ajuste de Weibull e gama para intervalos entre falhas e \textit{lognormal} para tempos de reparo --- base estatística para a estimação de MTBF e MTTR a partir de dados reais.
+Na dimensão temporal, \citeonline{schroeder2006} ajustaram distribuições a cerca de 23 mil falhas em 22 sistemas de alto desempenho e encontraram bom ajuste da distribuição de Weibull e da gama para os intervalos entre falhas, e da lognormal para os tempos de reparo. A Weibull é um modelo de tempos até a falha, e esse ajuste oferece base estatística para estimar MTBF e MTTR a partir de dados reais.
 
 \subsection{Latência como manifestação de falha sistêmica}
 
-A fronteira entre funcionamento e falha nem sempre é binária: uma resposta pode ser correta (HTTP 2xx) e ainda assim ser percebida como indisponibilidade quando o tempo de resposta ultrapassa certos limites. Por isso a latência figura entre os \textit{golden signals} do SRE \cite{beyer2016sre} e é incorporada em SLOs que combinam proporção de requisições rápidas e bem-sucedidas \cite{jones2016slo}.
+A fronteira entre funcionamento e falha nem sempre é binária, pois uma resposta pode ser correta, com código HTTP 2xx, na faixa de 200 a 299, que o protocolo reserva ao sucesso, e ainda assim ser percebida como indisponibilidade quando o tempo de resposta ultrapassa certos limites. Por isso a latência figura entre os \textit{golden signals} do SRE \cite{beyer2016sre} e é incorporada em SLOs que combinam a proporção de requisições rápidas e bem-sucedidas \cite{jones2016slo}.
 
-Os limites quantitativos vêm da pesquisa de usabilidade. \citeonline{nielsen1993response} consolidou três limiares perceptuais: 0,1\,s para a sensação de resposta instantânea; 1,0\,s para manter o fluxo de pensamento do usuário; e 10\,s acima dos quais a atenção se dispersa e a tarefa é abandonada. Em serviços web modernos, essas referências fundamentam a adoção de alvos como 200\,ms para o percentil característico de respostas percebidas como rápidas.
+Os limites quantitativos vêm da pesquisa de usabilidade, na qual \citeonline{nielsen1993response} consolidou três limiares perceptuais, sendo 0,1\,s o tempo que dá a sensação de resposta instantânea, 1,0\,s o limite para manter o fluxo de pensamento do usuário e 10\,s o ponto a partir do qual a atenção se dispersa e a tarefa tende a ser abandonada. Em serviços web, essas referências fundamentam alvos de até 1\,s para o percentil que caracteriza as respostas percebidas como rápidas.
 
-Isso justifica tratar atrasos excessivos como falhas efetivas, por meio de $R_{\mathrm{lat}} = 1 - f_{\mathrm{lat}}/n$, em que $f_{\mathrm{lat}}$ conta requisições que excedem o limiar do SLO. Além de falhas pontuais, latências muito grandes costumam ser sintoma sistêmico --- saturação de recursos, contenção de \textit{locks}, filas internas, propagação em cascata ---, cenário em que o rastreamento distribuído \cite{Sigelman2010} permite localizar onde o atraso se origina.
+Isso justifica tratar atrasos excessivos como falhas efetivas. A confiabilidade de latência é $R_{\mathrm{lat}} = 1 - f_{\mathrm{lat}}/n$, em que $n$ é o número de requisições e $f_{\mathrm{lat}}$ conta as que excedem o limiar do SLO. O índice de erro usa a mesma forma do modelo de Nelson, $R_{\mathrm{erro}} = 1 - f_{\mathrm{erro}}/n$, com $f_{\mathrm{erro}}$ igual ao número de respostas malsucedidas. Além disso, latências muito grandes costumam ser sintoma sistêmico de saturação de recursos, contenção de \textit{locks}, filas internas ou propagação em cascata, cenário em que o rastreamento distribuído \cite{Sigelman2010} permite localizar onde o atraso se origina.
 
 \subsection{Janela curta e escolha de $\tau$}
 
-O objetivo de nível de serviço e a janela em que se conta um episódio não são a mesma coisa. No \textit{Site Reliability Workbook}, a janela em que se apura o orçamento de erro é longa, da ordem de semanas \cite{beyer2018workbook}. Para obter MTBF e MTTR faz falta outra discretização: o fluxo de requisições vira uma sequência de estados, janela dentro do objetivo ou janela fora dele. A janela de 5 minutos usada neste trabalho é essa segunda peça. É curta o bastante para um pico não se diluir numa hora, e longa o bastante para meia dúzia de requisições não virar alarme. Exigir conformidade integral dentro dela transformaria uma retransmissão ou uma pausa de coleta de lixo em falha. A janela tolera, por isso, até 1\% de erro e cobra a latência no percentil 95, não na requisição mais lenta.
-
-O mesmo manual escreve a latência em dois cortes, no documento de exemplo do apêndice. Para o servidor HTTP visto pelo usuário, 90\% das requisições ficam abaixo de 200\,ms e 99\% abaixo de 1\,s. Para a API interna do exemplo, 90\% ficam abaixo de 400\,ms e 99\% abaixo de 850\,ms. Os autores anotam que os tempos foram arredondados para cima e que não verificaram se esses números acompanham de perto a experiência de quem usa o serviço. A ressalva segura o desenho deste trabalho: 200\,ms permanece o objetivo declarado antes de olhar as séries, e os demais valores são sensibilidade, não meta nova.
-
-O corte de 1\,s é o mesmo em que, na subseção anterior, o usuário ainda conserva o fio do raciocínio \cite{nielsen1993response}. \citeonline{nah2004} situa a espera tolerável por uma página da web em torno de 2\,s, de modo que 1\,s continua um corte de cauda, não o ponto em que a tarefa é abandonada. \citeonline{galletta2004} mostram que o atraso altera o desempenho e a atitude em tarefa feita no navegador. O índice Apdex reparte a mesma escala em faixas: resposta satisfatória até um limiar $T$ escolhido pela aplicação, e resposta apenas tolerável até $4T$ \cite{apdex}. Meio segundo é um $T$ comum em ferramentas de monitoramento web, e é um dos cortes de sensibilidade do front-end na seção de resultados.
-
-Quando a borda espera uma cadeia de serviços, o tempo visto por fora deixa de ser o tempo de um processo só. \citeonline{dean2013tail} mostram que essa latência de ponta é governada pelos percentis altos das dependências, não pela mediana. O estudo de caso de comércio eletrônico do workbook descreve o efeito correspondente na passagem de um monólito a microsserviços: cada camada precisa de um teto próprio, porque a borda acumula a espera das chamadas internas \cite{beyer2018workbook}. Um access log de servidor HTTP e o percentil de um front-end que orquestra microsserviços não são o mesmo objeto, e não cabe o mesmo $\tau$ de sensibilidade para os dois. O log HTTP é lido no corte de cauda do exemplo, 1\,s. O front-end é lido em 400\,ms, o corte de massa da API nesse exemplo, e em 500\,ms, o meio segundo associado ao Apdex. O objetivo oficial permanece 200\,ms nas duas séries.
+O objetivo de nível de serviço e a janela em que se conta um episódio não são a mesma coisa. No \textit{workbook} de SRE, o objetivo é apurado numa janela móvel de quatro semanas \cite{beyer2018workbook}, ao passo que a estimação de MTBF e MTTR exige discretizar o fluxo de requisições em janelas curtas, cada uma julgada dentro ou fora do objetivo. O mesmo \textit{workbook} traz um exemplo de SLO de latência escrito em dois cortes, com 200\,ms e 1\,s para o servidor HTTP visto pelo usuário e 400\,ms e 850\,ms para a API interna, e os autores ressalvam que os valores foram arredondados e não foram validados contra a experiência do usuário. \citeonline{dean2013tail} explicam por que essa estratificação é necessária, já que, quando a borda orquestra uma cadeia de serviços, a latência percebida é governada pelos percentis altos das dependências, de modo que o \textit{access log} de um servidor HTTP e o percentil de um \textit{front-end} que orquestra microsserviços não admitem o mesmo limiar de latência $\tau$.
 
 \subsection{Síntese e posicionamento}
 
-Os trabalhos revisados cobrem fragmentos complementares: índices calculados a partir de \textit{logs} sem ajuste de distribuições \cite{tian2004,goseva2004}; ajuste de distribuições a tempos entre falhas sem partir de sinais HTTP \cite{schroeder2006}; e análise de causas sem modelagem estatística \cite{oppenheimer2003}. Este trabalho se posiciona nessa interseção, aplicando $R_{\mathrm{erro}}$, $R_{\mathrm{lat}}$, MTBF e MTTR a sinais HTTP padronizados por OpenTelemetry, com a falha definida por um SLO declarado antes da inspeção das séries. Os cortes adicionais de $\tau$ seguem a camada que cada série mede e não substituem o objetivo de 200\,ms.
+Os trabalhos revisados cobrem fragmentos complementares, já que \citeonline{tian2004} e \citeonline{goseva2004} calculam índices a partir de \textit{logs} sem ajustar distribuições, \citeonline{schroeder2006} ajustam distribuições a tempos entre falhas sem partir de sinais HTTP e \citeonline{oppenheimer2003} analisam causas sem modelagem estatística. Este trabalho se posiciona nessa interseção, pois aplica $R_{\mathrm{erro}}$, $R_{\mathrm{lat}}$, MTBF e MTTR a sinais HTTP padronizados por OpenTelemetry e ajusta uma distribuição aos tempos entre falhas, sempre com a falha definida por um SLO declarado antes da inspeção das séries. Os cortes adicionais de $\tau$ seguem a camada que cada série mede e não substituem o objetivo de 200\,ms.
 
 \section{Materiais e Métodos}
 
-A avaliação usa duas séries públicas.
+A avaliação usa duas séries públicas de naturezas diferentes. A primeira é o \textit{access log} \texttt{mindweave/web-server-logs} \cite{hfweblogs}, amostra gratuita de um conjunto sintético que simula uma empresa de software como serviço, com 5.000 requisições recebidas por três servidores entre 1\textordmasculine\ de janeiro e 6 de fevereiro de 2024. Cada linha traz o instante, o servidor, o código HTTP e o tempo de resposta em milissegundos, e páginas, arquivos estáticos e chamadas de API dividem o mesmo arquivo. A segunda série vem do PetShop \cite{hardt2024petshop}, aplicação de demonstração para adoção de animais construída sobre microsserviços na nuvem da AWS, da qual se usa a série do PetSite, o \textit{front-end} da aplicação, isto é, a camada que o usuário acessa diretamente e que, a partir daí, chama a cadeia de serviços internos. Como nenhum outro componente chama o PetSite, a falha dele é a falha percebida pelo usuário \cite{oppenheimer2003}. Foram usados os três trechos de operação normal disponíveis, já agregados em janelas de 5 minutos, que correspondem ao tráfego baixo e ao tráfego alto, com 589 janelas cada, e ao tráfego variável, com 1.652 janelas, e nessa série a latência de cada janela chega pronta como percentil.
 
-A primeira é o access log \texttt{mindweave/web-server-logs} \cite{hfweblogs}: 5.000 requisições entre 1\textordmasculine\ de janeiro e 6 de fevereiro de 2024, em três servidores. Cada linha traz o instante, o servidor, o código HTTP e o tempo de resposta em milissegundos. Página, arquivo estático e API dividem o mesmo arquivo. A segunda é o PetShop \cite{hardt2024petshop}, métricas do front-end PetSite, que chama uma cadeia de microsserviços. Entram os três trechos de operação normal, já agregados em janelas de 5 minutos: tráfego baixo e tráfego alto, com 589 janelas cada, e tráfego variável, com 1.652. Nessa série a latência da janela chega pronta como percentil.
+Seguindo a regra da proposta, uma janela só entra na conta quando reúne pelo menos 100 requisições, e fica fora do objetivo de erro quando menos de 99\% das requisições evitam resposta 5xx. Códigos HTTP 5xx, de 500 a 599, indicam que o servidor não conseguiu completar o pedido. As respostas 4xx, de 400 a 499, que somam 11,9\% do \textit{access log}, não contam como falha, porque indicam que o pedido foi recusado por erro do cliente, como um recurso inexistente ou uma requisição mal formada, e não por falha do serviço. A janela fica fora do objetivo de latência quando o percentil 95 do tempo de resposta, $p_{95}$, passa do limiar $\tau$. Esse percentil é o valor abaixo do qual estão 95\% das requisições da janela, o que equivale a menos de 95\% delas terem respondido dentro de $\tau$. A janela de 5 minutos é curta o bastante para que um pico não se dilua numa hora e longa o bastante para que meia dúzia de requisições não vire alarme, enquanto a tolerância de 1\% de erro e a cobrança da latência no $p_{95}$ evitam que uma retransmissão ou uma pausa de \textit{garbage collection} seja contada como falha.
 
-A regra é a da proposta. A janela entra na conta quando reúne pelo menos 100 requisições. Fica fora do objetivo de erro quando menos de 99\% das requisições evitam resposta 5xx. Fica fora do objetivo de latência quando o $p_{95}$ passa de $\tau$, o que equivale a menos de 95\% das requisições responderem até esse tempo. O $\tau$ oficial é 200\,ms. A sensibilidade repete a conta com 1\,s no access log e com 400\,ms e 500\,ms no PetSite.
+Os índices são calculados por um plugin desenvolvido pelo grupo para o Grafana, programa de código aberto que consulta séries temporais e as exibe em painéis \cite{grafana}. Os mesmos números foram conferidos em Python.
 
-Um episódio é uma sequência de janelas julgadas fora do objetivo. A disponibilidade é a fração de janelas julgadas que permanecem dentro dele. O MTBF é o tempo acumulado em janelas boas, dividido pelo número de episódios. O MTTR é a duração média do episódio e só é calculado quando o episódio termina dentro da observação. Trecho que não volta não entra como tempo de reparo.
+O $\tau$ oficial é de 200\,ms nas duas séries e foi declarado antes da inspeção dos dados, enquanto os cortes de sensibilidade seguem a camada que cada série mede. No \textit{access log}, o corte de 1\,s é o corte de cauda do próprio exemplo do \textit{workbook} \cite{beyer2018workbook} e coincide com o limiar em que o usuário ainda conserva o fluxo do raciocínio \cite{nielsen1993response}, de modo que serve como referência de cauda, e não como meta nova. No PetSite, 400\,ms é o corte de massa da API interna do mesmo exemplo, e 500\,ms é o limiar $T$ usado no exemplo do índice Apdex \cite{apdex} na documentação da New Relic \cite{newrelic_apdex}, que lembra que esse limiar é escolhido pelo usuário. Os dois valores refletem o fato de que a borda acumula a espera das chamadas internas \cite{dean2013tail}.
 
-No access log, nenhuma janela de 5 minutos alcança 100 requisições. A maior parte dos intervalos ocupados tem uma. A mesma regra de volume foi aplicada ao dia, que reúne entre 68 e 182 requisições. Reporta-se também a fração de requisições do período inteiro que responde em até $\tau$, porque esse número não depende da janela. O $p_{95}$ é a posição $\lfloor np \rfloor$ da amostra ordenada.
+Um episódio é uma sequência de janelas julgadas consecutivas fora do objetivo, e uma janela não julgada, por ter menos de 100 requisições, encerra o episódio em curso. A disponibilidade $A$ é a fração das janelas julgadas que permanecem dentro do objetivo, o MTBF é o tempo acumulado em janelas boas dividido pelo número de episódios e o MTTR é a duração média dos episódios. Quando um episódio ainda está aberto no fim da observação, o sistema não volta ao objetivo dentro do período observado, e por isso esse trecho não entra no cálculo do MTTR.
+
+No \textit{access log}, nenhuma janela de 5 minutos alcança 100 requisições, já que a mais cheia tem seis e a maior parte dos intervalos ocupados tem uma só. Por isso a mesma regra de volume foi aplicada ao dia, que reúne entre 68 e 182 requisições, de modo que 28 dos 37 dias são julgados. Reporta-se também a fração de requisições do período inteiro que responde em até $\tau$, porque esse número não depende da janela, e o $p_{95}$ é tomado como o elemento de posição $\lfloor 0{,}95\,n \rfloor$ da amostra ordenada, contada a partir de zero.
+
+Para o $R_{\mathrm{erro}}$ do período, calcula-se o intervalo de confiança de 95\% de Wilson, que supõe requisições independentes, e também um intervalo por \textit{bootstrap} em blocos, com 2.000 reamostras de blocos de 12 janelas, isto é, de uma hora, o que preserva a dependência entre janelas vizinhas. Os tempos entre falhas do modo de erro no PetSite, que são as durações dos trechos contínuos dentro do objetivo, foram ajustados às distribuições exponencial e de Weibull por máxima verossimilhança. A Weibull descreve tempos até a falha com um parâmetro de escala e um parâmetro de forma $k$. Em $k = 1$ ela coincide com a exponencial e a taxa de falha é constante. Em $k < 1$ a taxa é decrescente, e uma falha torna outra mais provável logo em seguida. Em $k > 1$ a taxa cresce com o tempo de funcionamento. A censura é à direita nos trechos que tocam o início ou o fim de cada cenário, e os dois modelos foram comparados pelo critério de informação de Akaike (AIC) e pelo teste de razão de verossimilhança da hipótese $k = 1$.
 
 \section{Resultados}
 
-No access log, o $p_{50}$ é 90\,ms, o $p_{95}$ é 629\,ms e o $p_{99}$ é 1,46\,s. A Tabela~\ref{tab:hf} compara o objetivo oficial com o corte de cauda.
+\subsection{\textit{Access log}}
+
+No \textit{access log}, o percentil 50 ($p_{50}$) é de 90\,ms, o $p_{95}$ de 629\,ms e o percentil 99 ($p_{99}$) de 1,46\,s, e a Tabela~\ref{tab:hf} compara o objetivo oficial de latência com o corte de cauda.
 
 \begin{table}[htbp]
 \centering
-\caption{Latência no access log, no objetivo oficial e no corte de 1\,s.}
+\caption{Latência no \textit{access log} no objetivo oficial e no corte de 1\,s}
 \label{tab:hf}
 \small
 \begin{tabular}{lcc}
@@ -166,20 +164,28 @@ Leitura & $\tau = 200\,\mathrm{ms}$ & $\tau = 1\,\mathrm{s}$ \\
 \midrule
 Requisições em até $\tau$ & 75,2\% & 97,9\% \\
 Dias com $p_{95} \le \tau$ & 0 de 37 & 37 de 37 \\
-Dias com $n \ge 100$ e $p_{95} \le \tau$ & 0 de 28 & 28 de 28 \\
+Dias julgados dentro do objetivo & 0 de 28 & 28 de 28 \\
+Episódios & 6 & 0 \\
+MTTR & 4,7 dias & --- \\
 \bottomrule
 \end{tabular}
 
 \vspace{0.4em}
 
-{\footnotesize Fonte: elaborada pelos autores.}
+{\footnotesize Fonte: elaborada pelos autores a partir de \citeonline{hfweblogs}, com cálculo no plugin de confiabilidade para Grafana e conferência em Python.}
 \end{table}
 
-Com 200\,ms, três quartos das requisições respondem a tempo, aquém dos 95\% pedidos, e nenhum dia fecha o percentil dentro do corte. O dia de $p_{95}$ mais baixo ainda está em 349\,ms. Com 1\,s, 97,9\% das requisições respondem a tempo e os 37 dias passam. O $p_{95}$ diário fica entre 349\,ms e 857\,ms. O piso de 100 requisições deixa de fora nove dias mais vazios e não muda o desfecho. Não há episódio no meio do caminho: um corte põe a série inteira fora do objetivo, o outro não marca um dia ruim. MTBF e MTTR de latência não saem da grade de 5 minutos, porque essa grade não tem janela julgada. A leitura por servidor, no mesmo 1\,s, só separa servidores em poucos dias, cada um com poucas dezenas de requisições, e não é tratada como resultado.
+Com 200\,ms, três quartos das requisições respondem a tempo, bem aquém dos 95\% exigidos, e nenhum dia fecha o percentil dentro do corte, já que o dia de $p_{95}$ mais baixo ainda fica em 349\,ms. Como todos os 28 dias julgados estão fora do objetivo, a disponibilidade de latência é nula e não há tempo acumulado em dias bons, mas a contagem registra seis episódios com MTTR médio de 4,7 dias, e esse número precisa ser lido com cuidado. Dos nove dias não julgados, oito caem em fins de semana, quando o tráfego fica abaixo de 100 requisições, e o restante é o dia 6 de fevereiro, cujos registros terminam no início da tarde, de modo que cada episódio corresponde a uma semana útil e termina porque faltou volume para julgar o dia seguinte, e não porque o serviço voltou ao objetivo. Assim, o MTTR de 4,7 dias mede o intervalo entre lacunas de dados, e não um tempo de reparo. Com 1\,s, por outro lado, 97,9\% das requisições respondem a tempo, o $p_{95}$ diário fica entre 349\,ms e 857\,ms e os 37 dias passam, de forma que o modo de latência deixa de registrar episódios. A leitura por servidor nesse mesmo corte só separa servidores em poucos dias, cada um com poucas dezenas de requisições, e por isso não é tratada como resultado.
+
+O modo de erro não depende de $\tau$ e mostra que o problema do \textit{access log} não se resume à lentidão. Das 5.000 requisições, 110 receberam resposta 5xx, sendo 85 com código 500 e 25 com código 503, o que leva a $R_{\mathrm{erro}} = 97{,}8\%$, com intervalo de Wilson de 97,4\% a 98,2\%, inteiramente abaixo da meta de 99\%. Na leitura diária, apenas 4 dos 28 dias julgados, que são 13/01, 17/01, 31/01 e 05/02, ficam dentro do objetivo de erro, o que resulta em disponibilidade de 14,3\%, com sete episódios, MTBF de cerca de 14 horas e MTTR de 3,4 dias. Desses sete episódios, três terminam com a volta do serviço ao objetivo, enquanto os outros quatro terminam, como no modo de latência, por falta de dados no dia seguinte. Por isso, mesmo no corte de 1\,s, em que a latência deixa de falhar, o julgamento conjunto de erro e latência continua com 24 dias ruins, e o \textit{access log} falha nos dois critérios.
+
+\subsection{PetSite}
+
+No PetSite, o $p_{95}$ mediano fica em torno de 309\,ms nos três cenários, e a Tabela~\ref{tab:pet} mostra o efeito de cada corte sobre essa série.
 
 \begin{table}[htbp]
 \centering
-\caption{Disponibilidade de latência do PetSite. MTBF e MTTR ficam em branco quando não há episódio encerrado.}
+\caption{Disponibilidade de latência do PetSite por corte $\tau$}
 \label{tab:pet}
 \small
 \setlength{\tabcolsep}{5pt}
@@ -187,13 +193,13 @@ Com 200\,ms, três quartos das requisições respondem a tempo, aquém dos 95\% 
 \toprule
 Cenário & $\tau$ (ms) & $A$ (\%) & Episódios & MTBF & MTTR \\
 \midrule
-Tráfego baixo & 200 & 0 & 1 & --- & --- \\
+Tráfego baixo & 200 & 0 & 1 & 0 & --- \\
 Tráfego baixo & 400 & 98,8 & 7 & 6,9\,h & 5\,min \\
 Tráfego baixo & 500 & 99,5 & 3 & 16,3\,h & 5\,min \\
-Tráfego alto & 200 & 0 & 1 & --- & --- \\
+Tráfego alto & 200 & 0 & 1 & 0 & --- \\
 Tráfego alto & 400 & 99,7 & 2 & 24,5\,h & 5\,min \\
 Tráfego alto & 500 & 99,8 & 1 & 49,0\,h & 5\,min \\
-Tráfego variável & 200 & 0,06 & 2 & --- & --- \\
+Tráfego variável & 200 & 0,06 & 2 & 2,5\,min & 24,4\,h \\
 Tráfego variável & 400 & 99,9 & 2 & 68,8\,h & 5\,min \\
 Tráfego variável & 500 & 100 & 0 & --- & --- \\
 \bottomrule
@@ -201,25 +207,61 @@ Tráfego variável & 500 & 100 & 0 & --- & --- \\
 
 \vspace{0.4em}
 
-{\footnotesize Fonte: elaborada pelos autores.}
+{\footnotesize MTBF fica em branco quando não há episódio, e MTTR, quando nenhum episódio termina dentro da observação.\\
+Fonte: elaborada pelos autores a partir de \citeonline{hardt2024petshop}, com cálculo no plugin de confiabilidade para Grafana e conferência em Python.}
 \end{table}
 
-No PetSite o $p_{95}$ mediano fica em torno de 309\,ms nos três cenários, e a Tabela~\ref{tab:pet} mostra o que cada corte faz com isso. No objetivo oficial a disponibilidade de latência é nula no tráfego baixo e no alto, e é de uma janela em 1.652 no tráfego variável. Não há reparo a estimar. Para 200\,ms, a lentidão é o estado da série.
+No objetivo oficial, a disponibilidade de latência é nula nos tráfegos baixo e alto, em que a série inteira forma um único episódio que segue aberto no fim da observação, de modo que, com 200\,ms, a lentidão é o estado normal do PetSite e não há reparo a estimar. No tráfego variável, uma única janela em 1.652 fica dentro do corte e divide a série em dois episódios, dos quais só o primeiro termina dentro da observação, e por isso as 24,4\,h registradas como MTTR medem apenas o tempo até essa janela isolada, e não uma recuperação de fato.
 
-Em 400\,ms a disponibilidade vai a 98,8\%, 99,7\% e 99,9\%. Os episódios são 7, 2 e 2, todos de uma janela, de modo que o MTTR fica na resolução de 5 minutos e o que muda é o espaçamento: cerca de 6,9\,h, 24,5\,h e 68,8\,h. Em 500\,ms o tráfego variável deixa de ter janela ruim. Os outros dois cenários conservam 3 e 1 episódios, ainda de uma janela, com MTBF de 16,3\,h e 49,0\,h. A mesma conta com 1\,s, feita para conferir o corte do access log, não encontra janela ruim em cenário nenhum. Esse valor apaga o modo latência no PetSite e fica de fora da sensibilidade desta série.
+Em 400\,ms, a disponibilidade sobe para 98,8\%, 99,7\% e 99,9\%, com 7, 2 e 2 episódios, todos de uma única janela, e por isso o MTTR fica preso à resolução de 5 minutos, ao passo que o que muda entre os cenários é o espaçamento entre episódios, de cerca de 6,9\,h, 24,5\,h e 68,8\,h. Em 500\,ms, o tráfego variável deixa de ter janela ruim, enquanto os outros dois cenários mantêm 3 e 1 episódios, ainda de uma janela, com MTBF de 16,3\,h e 49,0\,h. A mesma conta com 1\,s, feita para conferir o corte do \textit{access log}, não encontra janela ruim em nenhum cenário, o que mostra que esse valor apaga o modo de latência no PetSite e justifica deixá-lo fora da sensibilidade desta série.
 
-O modo de erro, na meta de 99\%, ainda vê episódio no PetSite: disponibilidade de 96,3\%, 98,8\% e 98,3\%, com MTTR entre 5,6 e 8,5 minutos. Erro e latência não descrevem o mesmo período. O objetivo declarado segue 200\,ms. As duas tabelas registram o que ele produz e o que produzem os cortes de sensibilidade em cada série.
+No modo de erro, o PetSite atendeu 1.635.518 requisições nos três cenários, com 3.206 erros, e o $R_{\mathrm{erro}}$ do período fica entre 99,59\% e 99,91\%, conforme a Tabela~\ref{tab:pet-erro}. Os erros, porém, chegam em rajadas, já que o índice de dispersão dos erros por janela, que ficaria próximo de 1 se as requisições falhassem de forma independente, vale 433 no tráfego baixo, 4,0 no alto e 61 no variável. Por isso o intervalo de Wilson é estreito demais, e o intervalo por \textit{bootstrap} em blocos é a leitura adequada, que no tráfego baixo vai de 99,08\% a 99,90\%, em vez de 99,57\% a 99,61\%. Mesmo assim, os três intervalos ficam inteiramente acima de 99\%, de modo que o serviço cumpre a meta de erro no período em todos os cenários.
 
+\begin{table}[htbp]
+\centering
+\caption{Modo de erro do PetSite, com intervalos de confiança de 95\% para $R_{\mathrm{erro}}$}
+\label{tab:pet-erro}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Cenário & $R_{\mathrm{erro}}$ (\%) & IC Wilson & IC \textit{bootstrap} & $A$ (\%) & Episódios & MTBF & MTTR \\
+\midrule
+Tráfego baixo & 99,59 & 99,57--99,61 & 99,08--99,90 & 96,3 & 13 & 3,6\,h & 8,5\,min \\
+Tráfego alto & 99,91 & 99,90--99,92 & 99,89--99,93 & 98,8 & 6 & 8,1\,h & 5,8\,min \\
+Tráfego variável & 99,82 & 99,81--99,83 & 99,74--99,89 & 98,3 & 25 & 5,4\,h & 5,6\,min \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.4em}
+
+{\footnotesize Fonte: elaborada pelos autores a partir de \citeonline{hardt2024petshop}, com cálculo em Python.}
+\end{table}
+
+Na leitura por janela, a disponibilidade de erro é de 96,3\%, 98,8\% e 98,3\%, com 44 episódios no total, MTBF entre 3,6 e 8,1 horas e MTTR entre 5,6 e 8,5 minutos, o que descreve um serviço que perde disponibilidade por falhar com certa frequência, e não por demorar a se recuperar. Como 39 dos 44 episódios duram uma única janela, o MTTR está no limite da resolução de 5 minutos, e a recuperação real pode ter sido mais curta. A diferença entre os cenários, por sua vez, deve-se mais a incidentes isolados do que ao volume, porque, no tráfego baixo, dois dos 13 episódios concentram 851 dos 1.167 erros, um no início da observação e outro numa janela de 23 de agosto em que o $R_{\mathrm{erro}}$ cai para 40,7\%.
+
+Os 46 trechos dentro do objetivo de erro, cinco deles censurados, permitem ajustar a distribuição do tempo entre falhas, apresentada na Figura~\ref{fig:tbf}. A exponencial resulta em média de 5,6 horas, enquanto a Weibull resulta em parâmetro de forma $k = 0{,}81$ e escala de 5,2 horas, com AIC ligeiramente menor, de 560,3 contra 561,5. Um $k$ abaixo de 1 indica taxa de falha decrescente, ou seja, logo depois de uma falha a chance de outra é maior, o que é coerente com as rajadas observadas e com o ajuste Weibull relatado por \citeonline{schroeder2006}. Ainda assim, o teste de razão de verossimilhança para $k = 1$ resulta em $p = 0{,}07$, de modo que, com 46 intervalos, não há evidência suficiente para rejeitar a exponencial ao nível de 5\%.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{../../casos/petshop/resultados/fig4_tempo_entre_falhas.png}
+\caption{Tempo entre falhas do PetSite no modo de erro, com a curva empírica de Kaplan--Meier e os ajustes exponencial e Weibull}
+\label{fig:tbf}
+
+{\footnotesize Fonte: elaborada pelos autores a partir de \citeonline{hardt2024petshop}.}
+\end{figure}
+
+Erro e latência, portanto, não descrevem o mesmo período no PetSite, já que o serviço cumpre a meta de erro na maior parte do tempo e falha a de latência o tempo todo, ao passo que no \textit{access log} os dois critérios falham. O objetivo declarado continua sendo de 200\,ms, e as tabelas registram tanto o que ele produz quanto o que produzem os cortes de sensibilidade em cada série.
 
 \section{Conclusão}
 
-1. Discutir sucesso e desafios desse trabalho. 
-2. Fazer uma análise do que pode ser feito diferente em um trabalho muito parecido 
-3. Ideias para o futuro:
+Este trabalho aplicou um conjunto reduzido de índices de confiabilidade, formado por $R_{\mathrm{erro}}$, $R_{\mathrm{lat}}$, disponibilidade, MTBF e MTTR, a sinais HTTP padronizados por OpenTelemetry, tomando como falha a violação de um SLO declarado antes da inspeção das séries. O resultado principal é metodológico, pois a mesma receita, aplicada a duas séries de naturezas distintas, produz leituras coerentes quando o corte $\tau$ respeita a camada que cada série mede. No \textit{access log}, a granularidade de 5 minutos mostrou-se incompatível com o volume de requisições, e a análise diária revelou um serviço que falha nos dois critérios, com $R_{\mathrm{erro}}$ de 97,8\% e nenhum dia dentro do objetivo de latência, cujos episódios são delimitados pela falta de dados nos fins de semana, e não por recuperação. No PetSite, o serviço cumpre a meta de erro no período, com intervalos de confiança acima de 99\% mesmo quando as rajadas são consideradas, e sai do objetivo em episódios curtos cujo tempo entre falhas é bem descrito por uma Weibull com $k$ abaixo de 1, embora sem significância a 5\%, enquanto o objetivo de latência de 200\,ms deixa a série inteira fora de conformidade e são os cortes de 400\,ms e 500\,ms que revelam episódios discretos de lentidão.
 
-- Tratar desenvolvimento de software como fábricação de componentes
-- Garantir altíssima confiabilidade do que é produzido pela "fábrica de software"
-- Usar medidas de médio-longo prazo para direcionar as melhorias de fluxos automatizados de criação de software.
+Os principais desafios encontrados foram de duas ordens. Em primeiro lugar, a escolha da janela de contagem e do limiar de latência não é neutra, já que janelas curtas demais para o volume da série anulam a disponibilidade e cortes frouxos demais escondem episódios reais. Em segundo lugar, a definição operacional de falha mostrou-se dependente da camada observada, pois o \textit{access log} de um servidor e o percentil de um \textit{front-end} que orquestra microsserviços não admitem o mesmo $\tau$, conforme já advertido por \citeonline{dean2013tail}. A opção adotada foi fixar o objetivo oficial antes da análise e tratar os demais valores como sensibilidade, seguindo a recomendação de \citeonline{jones2016slo} de não escolher o objetivo com base no desempenho atual.
+
+Em um trabalho análogo, duas decisões mereceriam revisão. A primeira é escolher séries em que a granularidade de coleta esteja alinhada ao volume esperado de tráfego, o que evita descartar janelas por insuficiência amostral e criar episódios delimitados por lacunas de dados. A segunda é instrumentar diretamente com OpenTelemetry um sistema controlado, o que permitiria variar a carga e injetar falhas de maneira reprodutível, em vez de depender de séries públicas que agregam camadas heterogêneas em um único arquivo.
+
+Como perspectiva de continuidade, propõe-se aproximar a prática de engenharia de software da lógica de fabricação de componentes, na qual cada entrega é tratada como peça sujeita a controle estatístico de processo. Nesse enquadramento, a confiabilidade deixa de ser atributo apenas do sistema em produção e passa a ser também atributo da linha de produção que o gera, com metas de altíssima confiabilidade impostas ao próprio fluxo de integração e entrega contínuas. Indicadores de médio e longo prazo, como o MTBF por serviço, a deriva de percentis de latência entre versões e a taxa de reintrodução de falhas, forneceriam o sinal necessário para direcionar melhorias nos fluxos automatizados de criação de software, deslocando o esforço de observabilidade da detecção reativa de incidentes para a avaliação sistemática da própria fábrica de software.
 
 \section{Declaração de uso de IA}
 

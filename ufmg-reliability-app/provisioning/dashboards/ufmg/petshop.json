@@ -1,6 +1,6 @@
 {
   "uid": "petshop-confiabilidade",
-  "title": "Confiabilidade — PetShop (caso secundário)",
+  "title": "Confiabilidade — PetShop (Amazon Science)",
   "editable": true,
   "timezone": "utc",
   "graphTooltip": 1,
@@ -14,7 +14,7 @@
     "from": "2023-08-21T08:55:00.000Z",
     "to": "2023-08-23T10:05:00.000Z"
   },
-  "description": "Troque de cenário pelos links no topo: cada cenário está numa data diferente de 2023 e o link ajusta o período. Dados do PetShop Dataset (Hardt et al., 2024; CC-BY-4.0), mapeados para OpenTelemetry por petshop/conversor.",
+  "description": "Troque de cenário pelos links no topo: cada cenário está numa data diferente de 2023 e o link ajusta o período. Dados do PetShop Dataset (Hardt et al., 2024; CC-BY-4.0), mapeados para OpenTelemetry por conversores/petshop_para_openmetrics.py.",
   "links": [
     {
       "title": "Cenário: tráfego baixo (21–23/08/2023)",
@@ -80,15 +80,16 @@
         "sloLat": 0.95,
         "tauMs": 200,
         "minRequests": 100,
-        "windowSeconds": 300,
+        "windowSeconds": 0,
         "countMode": "cumulative",
         "latencyMode": "p95",
-        "failureMode": "error"
+        "failureMode": "error",
+        "censoredBreaksEpisode": true
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req + $censura_corta)",
           "legendFormat": "total acumulado",
           "editorMode": "code",
           "range": true,
@@ -134,15 +135,16 @@
         "sloLat": 0.95,
         "tauMs": 200,
         "minRequests": 100,
-        "windowSeconds": 300,
+        "windowSeconds": 0,
         "countMode": "cumulative",
         "latencyMode": "p95",
-        "failureMode": "latency"
+        "failureMode": "latency",
+        "censoredBreaksEpisode": true
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req + $censura_corta)",
           "legendFormat": "total acumulado",
           "editorMode": "code",
           "range": true,
@@ -188,15 +190,16 @@
         "sloLat": 0.95,
         "tauMs": 200,
         "minRequests": 100,
-        "windowSeconds": 300,
+        "windowSeconds": 0,
         "countMode": "cumulative",
         "latencyMode": "p95",
-        "failureMode": "both"
+        "failureMode": "both",
+        "censoredBreaksEpisode": true
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "expr": "sum(http_server_request_duration_seconds_count{componente=\"$servico\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req + $censura_corta)",
           "legendFormat": "total acumulado",
           "editorMode": "code",
           "range": true,
@@ -256,12 +259,15 @@
         "minRequests": 100,
         "rowLabel": "componente",
         "countMode": "cumulative",
-        "hideUnjudged": true
+        "hideUnjudged": true,
+        "latencyMode": "p95",
+        "failureMode": "error",
+        "tauMs": 200
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (componente) (http_server_request_duration_seconds_count{principal=\"sim\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req)",
+          "expr": "sum by (componente) (http_server_request_duration_seconds_count{principal=\"sim\"}) + 0 * ($tau_ms + $slo_erro + $slo_lat + $min_req + $censura_corta)",
           "legendFormat": "{{componente}} total",
           "editorMode": "code",
           "range": true,
@@ -274,6 +280,16 @@
           "editorMode": "code",
           "range": true,
           "interval": "5m"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "interval": "5m",
+          "expr": "max by (componente) (http_server_request_duration_window_seconds{principal=\"sim\",quantile=\"$slo_lat\"})",
+          "legendFormat": "{{componente}} percentil"
         }
       ]
     },
@@ -769,6 +785,33 @@
         "skipUrlSync": false,
         "allowCustomValue": true,
         "description": "Só para teste: a proposta fixou o valor marcado com (proposta)."
+      },
+      {
+        "name": "censura_corta",
+        "type": "custom",
+        "label": "Janela não julgada corta episódio",
+        "description": "Sim: trechos ruins separados por uma janela abaixo do mínimo contam como episódios diferentes. No PetSite nenhuma janela fica abaixo do mínimo, então não muda nada.",
+        "query": "sim : 1,não : 0",
+        "current": {
+          "selected": true,
+          "text": "sim",
+          "value": "1"
+        },
+        "options": [
+          {
+            "text": "sim",
+            "value": "1",
+            "selected": true
+          },
+          {
+            "text": "não",
+            "value": "0",
+            "selected": false
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allowCustomValue": false
       }
     ]
   }

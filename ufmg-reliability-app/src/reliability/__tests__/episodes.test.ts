@@ -51,3 +51,28 @@ describe('episodes (paridade com motor.py#episodios)', () => {
     expect(r.availability).toBeCloseTo(identity, 10);
   });
 });
+
+describe('janela não julgada (null)', () => {
+  const seq = [true, true, null, true, false, null, null, true];
+
+  it('por padrão corta o episódio', () => {
+    const r = episodes(seq);
+    expect(r.judged).toBe(5);
+    expect(r.episodes.map((e) => e.length)).toEqual([2, 1, 1]);
+    expect(r.mttr).toBeCloseTo(4 / 3, 10);
+    expect(r.mtbf).toBeCloseTo(1 / 3, 10);
+    expect(r.availability).toBeCloseTo(1 / 5, 10);
+  });
+
+  it('com censoredBreaks = false, junta os vizinhos', () => {
+    const r = episodes(seq, { censoredBreaks: false });
+    expect(r.episodes.map((e) => e.length)).toEqual([3, 1]);
+    expect(r.availability).toBeCloseTo(1 / 5, 10);
+  });
+
+  it('não julgada nunca conta como boa nem como ruim', () => {
+    const r = episodes([null, null]);
+    expect(r.judged).toBe(0);
+    expect(Number.isNaN(r.availability)).toBe(true);
+  });
+});

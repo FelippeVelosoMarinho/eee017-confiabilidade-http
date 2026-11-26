@@ -6,7 +6,7 @@ apps:
     org_name: 'ufmg'
     disabled: false
     jsonData:
-      datasourceUid: webstore-metrics
+      datasourceUid: huggingface-prom
       slo_erro: 0.99
       slo_lat: 0.95
       tau_ms: 200

@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus (Hugging Face)
+    uid: huggingface-prom
+    type: prometheus
+    access: proxy
+    url: http://prometheus-huggingface:9090
+    isDefault: true
+
+  - name: Prometheus (PetShop)
+    uid: petshop-prom
+    type: prometheus
+    access: proxy
+    url: http://prometheus-petshop:9090
+    jsonData:
+      timeInterval: 5m

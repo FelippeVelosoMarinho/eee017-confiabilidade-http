@@ -1,23 +1,7 @@
-export interface AppOptions {
-  datasourceUid: string;
-  slo_erro: number;
-  slo_lat: number;
-  tau_ms: number;
-  window: string;
-  min_requests: number;
-}
-
-export const DEFAULT_OPTIONS: AppOptions = {
-  datasourceUid: 'webstore-metrics',
-  slo_erro: 0.99,
-  slo_lat: 0.95,
-  tau_ms: 200,
-  window: '5m',
-  min_requests: 100,
-};
-
 export interface WindowRow {
+  /** Instante (ms) que fecha a janela. */
   t: number;
+  /** Requisições na janela. */
   n: number;
   f_err: number;
   f_lat: number;
@@ -25,5 +9,10 @@ export interface WindowRow {
   r_lat: number;
   bad_erro: boolean;
   bad_lat: boolean;
+  /** Não julgada: volume abaixo do mínimo (inclui janela vazia). */
   censored: boolean;
+  /** Sem nenhuma requisição. */
+  empty: boolean;
+  /** Erros ou falhas de latência maiores que o total, ou negativos: dado incoerente. */
+  inconsistent: boolean;
 }

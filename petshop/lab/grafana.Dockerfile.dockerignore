@@ -1,7 +1,0 @@
-*
-!ufmg-reliability-app
-ufmg-reliability-app/node_modules
-ufmg-reliability-app/dist
-ufmg-reliability-app/coverage
-ufmg-reliability-app/test-results
-ufmg-reliability-app/playwright-report
